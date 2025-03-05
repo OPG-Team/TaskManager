@@ -15,6 +15,7 @@ class UserOrm(Model):
 
     email: Mapped[str] = mapped_column(primary_key=True)
     password: Mapped[str] = mapped_column(nullable=False)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
     role: Mapped[SqlEnum[UserRole]] = mapped_column(SqlEnum(UserRole), nullable=False)
 
     tasks = relationship(argument="TaskOrm", secondary="connection", back_populates="users")
@@ -26,7 +27,7 @@ class ConnectionType(enum.Enum):
     DEFAULT = "Обычный"
 
 
-class Connection(Model):
+class ConnectionOrm(Model):
     __tablename__ = "connection"
 
     email: Mapped[str] = mapped_column(ForeignKey("users.email"), primary_key=True)
