@@ -149,6 +149,9 @@ class TaskRepository:
             task_id: ID of the task to delete.
             user: UserInfo object
 
+        Returns:
+            None
+
         Raises:
             HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights.
             HTTTPError_task.TASK_NOT_FOUNT_404: Task not found on database.
@@ -173,7 +176,7 @@ class TaskRepository:
             await session.commit()
 
     @classmethod
-    async def add_user_on_task(cls, task_id: int, new_user_email: str, type_connection: ConnectionType, user: UserInfo) -> TaskWithUsers:
+    async def add_user_on_task(cls, task_id: int, new_user_email: str, type_connection: ConnectionType, user: UserInfo) -> None:
         """Adds a new user to a task with the specified connection type if the current user is the owner or admin.
 
         Args:
@@ -183,7 +186,7 @@ class TaskRepository:
             user: UserInfo of the current user (the requester).
 
         Returns:
-            The updated TaskWithUsers object with all connections.
+            None
 
         Raises:
             HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights (if DEFAULT user is not OWNER).
@@ -229,41 +232,8 @@ class TaskRepository:
             session.add(new_connection)
             await session.commit()
 
-            result = await session.execute(
-                select(TaskOrm)
-                .options(joinedload(TaskOrm.users))
-                .where(TaskOrm.id == task_id)
-            )
-            task = result.scalars().first()
-
-            connections_query = await session.execute(
-                select(ConnectionOrm).where(ConnectionOrm.id_task == task_id)
-            )
-            connections = connections_query.scalars().all()
-
-            connection_list = []
-            for conn in connections:
-                conn_user = next((u for u in task.users if u.email == conn.email), None)
-                if conn_user:
-                    connection_list.append(
-                        ConnectionWithUser(
-                            type=conn.type,
-                            user=UserInfo.model_validate(conn_user)
-                        )
-                    )
-
-            task_dict = {
-                "id": task.id,
-                "title": task.title,
-                "status": task.status,
-                "description": task.description,
-                "time": task.time,
-                "connections": connection_list
-            }
-            return TaskWithUsers(**task_dict)
-
     @classmethod
-    async def update_connection_type(cls, task_id: int, email_user: str, type_connection: ConnectionType, current_user: UserInfo) -> TaskWithUsers:
+    async def update_connection_type(cls, task_id: int, email_user: str, type_connection: ConnectionType, current_user: UserInfo) -> None:
         """Updates the connection type for a user in a task if the current user is the owner.
 
         Args:
@@ -273,7 +243,7 @@ class TaskRepository:
             current_user: UserInfo of the current user (the requester).
 
         Returns:
-            The updated TaskWithUsers object with all connections.
+            None
 
         Raises:
             HTTTPError_task.OWNER_CANNOT_CHANGE_OWN_CONNECTION_TYPE_400: The OWNER cannot change their own connection type.
@@ -315,44 +285,9 @@ class TaskRepository:
             connection.type = type_connection
             await session.commit()
 
-            # Загружаем обновлённую задачу с пользователями
-            result = await session.execute(
-                select(TaskOrm)
-                .options(joinedload(TaskOrm.users))
-                .where(TaskOrm.id == task_id)
-            )
-            task = result.scalars().first()
-
-            # Получаем все связи для задачи
-            connections_query = await session.execute(
-                select(ConnectionOrm).where(ConnectionOrm.id_task == task_id)
-            )
-            connections = connections_query.scalars().all()
-
-            # Формируем список связей
-            connection_list = []
-            for conn in connections:
-                conn_user = next((u for u in task.users if u.email == conn.email), None)
-                if conn_user:
-                    connection_list.append(
-                        ConnectionWithUser(
-                            type=conn.type,
-                            user=UserInfo.model_validate(conn_user)
-                        )
-                    )
-
-            task_dict = {
-                "id": task.id,
-                "title": task.title,
-                "status": task.status,
-                "description": task.description,
-                "time": task.time,
-                "connections": connection_list
-            }
-            return TaskWithUsers(**task_dict)
 
     @classmethod
-    async def delete_connection_user(cls, task_id: int, user_email_to_delete: str, current_user: UserInfo) -> TaskWithUsers:
+    async def delete_connection_user(cls, task_id: int, user_email_to_delete: str, current_user: UserInfo) -> None:
         """Deletes a user's connection to a task if the current user is the owner.
 
         Args:
@@ -361,7 +296,7 @@ class TaskRepository:
             current_user: UserInfo of the current user (the requester).
 
         Returns:
-            The updated TaskWithUsers object with remaining connections.
+            None
 
         Raises:
             HTTTPError_task.OWNER_CANNOT_DELETE_OWN_CONNECTION_400: The OWNER cannot delete their own connection.
@@ -405,39 +340,3 @@ class TaskRepository:
             # Удаляем связь
             await session.delete(connection)
             await session.commit()
-
-            # Загружаем обновлённую задачу с пользователями
-            result = await session.execute(
-                select(TaskOrm)
-                .options(joinedload(TaskOrm.users))
-                .where(TaskOrm.id == task_id)
-            )
-            task = result.scalars().first()
-
-            # Получаем оставшиеся связи для задачи
-            connections_query = await session.execute(
-                select(ConnectionOrm).where(ConnectionOrm.id_task == task_id)
-            )
-            connections = connections_query.scalars().all()
-
-            # Формируем список связей
-            connection_list = []
-            for conn in connections:
-                conn_user = next((u for u in task.users if u.email == conn.email), None)
-                if conn_user:
-                    connection_list.append(
-                        ConnectionWithUser(
-                            type=conn.type,
-                            user=UserInfo.model_validate(conn_user)
-                        )
-                    )
-
-            task_dict = {
-                "id": task.id,
-                "title": task.title,
-                "status": task.status,
-                "description": task.description,
-                "time": task.time,
-                "connections": connection_list
-            }
-            return TaskWithUsers(**task_dict)

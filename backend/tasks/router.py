@@ -84,12 +84,13 @@ async def delete_task(id: int, user: UserInfo = Depends(get_current_user)):
     responses=TaskResponses.add_new_user_on_task,
 )
 async def add_user_on_task(id: int, new_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
-    return await TaskRepository.add_user_on_task(
+    await TaskRepository.add_user_on_task(
         task_id=id,
         new_user_email=new_user,
         type_connection=type_connection,
         user=user
     )
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.put(
@@ -102,12 +103,13 @@ async def add_user_on_task(id: int, new_user: str, type_connection: ConnectionTy
     responses=TaskResponses.update_connection_type,
 )
 async def update_connection_type_for_user(id: int, email_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
-    return await TaskRepository.update_connection_type(
+    await TaskRepository.update_connection_type(
         task_id=id,
         email_user=email_user,
         type_connection=type_connection,
         current_user=user
     )
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete(
@@ -120,8 +122,9 @@ async def update_connection_type_for_user(id: int, email_user: str, type_connect
     responses=TaskResponses.delete_connection_user,
 )
 async def delete_connection_user(id: int, email_user: str, user: UserInfo = Depends(get_current_user)):
-    return await TaskRepository.delete_connection_user(
+    await TaskRepository.delete_connection_user(
         task_id=id,
         user_email_to_delete=email_user,
         current_user=user
     )
+    return Response(status_code=status.HTTP_200_OK)
