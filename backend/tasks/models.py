@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
-from auth.models import ConnectionWithUser, UserInfo
+from auth.models import ConnectionWithUser
 from tasks.database import TaskStatus
 
 

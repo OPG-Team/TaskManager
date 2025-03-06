@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, status, Response
 from fastapi.params import Depends
+from auth.database import ConnectionType
 from auth.dependencies import get_current_user
 from auth.models import UserInfo
 from auth.responses.responses import base_auth_responses
@@ -71,3 +72,56 @@ async def delete_task(id: int, user: UserInfo = Depends(get_current_user)):
         user=user
     )
     return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post(
+    path="/add_user/{id}",
+    summary="Add user on the your task",
+    description="Add user on the your task",
+    response_description="TaskWithUsers",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskWithUsers,
+    responses=TaskResponses.add_new_user_on_task,
+)
+async def add_user_on_task(id: int, new_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
+    return await TaskRepository.add_user_on_task(
+        task_id=id,
+        new_user_email=new_user,
+        type_connection=type_connection,
+        user=user
+    )
+
+
+@router.put(
+    path="/update_connection_type/{id}",
+    summary="Update connection type",
+    description="Update connection type",
+    response_description="TaskWithUsers",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskWithUsers,
+    responses=TaskResponses.update_connection_type,
+)
+async def update_connection_type_for_user(id: int, email_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
+    return await TaskRepository.update_connection_type(
+        task_id=id,
+        email_user=email_user,
+        type_connection=type_connection,
+        current_user=user
+    )
+
+
+@router.delete(
+    path="/delete_connection/{id}",
+    summary="Delete connection",
+    description="Delete connection",
+    response_description="TaskWithUsers",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskWithUsers,
+    responses=TaskResponses.delete_connection_user,
+)
+async def delete_connection_user(id: int, email_user: str, user: UserInfo = Depends(get_current_user)):
+    return await TaskRepository.delete_connection_user(
+        task_id=id,
+        user_email_to_delete=email_user,
+        current_user=user
+    )
