@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/components/task-form.css">
+    <link rel="stylesheet" href="css/components/task-list.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Task Manager</h1>
+            <button id="logoutButton" class="logout-btn">Logout</button>
+        </header>
+
+        <main>
+            <div class="task-form">
+                <h2>Create a New Task</h2>
+                <form id="taskForm">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required>
+    
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="Новая">Новая</option>
+                        <option value="В работе">В работе</option>
+                        <option value="Завершена">Завершена</option>
+                    </select>
+    
+                    <label for="description">Description:</label>
+                    <textarea id="description" name="description" required></textarea>
+    
+                    <button type="submit">Create Task</button>
+                </form>
+            </div>
+    
+            <div class="task-list">
+                <h2>Tasks</h2>
+                <ul id="tasks"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
