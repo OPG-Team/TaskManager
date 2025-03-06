@@ -173,7 +173,7 @@ class TaskRepository:
             await session.commit()
 
     @classmethod
-    async def add_user_on_task(cls, task_id: int, new_user_email: str, type_connection: ConnectionType, user: UserInfo):
+    async def add_user_on_task(cls, task_id: int, new_user_email: str, type_connection: ConnectionType, user: UserInfo) -> TaskWithUsers:
         """Adds a new user to a task with the specified connection type if the current user is the owner or admin.
 
         Args:
