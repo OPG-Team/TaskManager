@@ -33,7 +33,6 @@ async def get_all_tasks(user: UserInfo = Depends(get_current_user)):
     description="Add new task",
     response_description="The task object from the database",
     status_code=status.HTTP_201_CREATED,
-    response_model=TaskWithUsers,
     responses=TaskResponses.create_new_task,
 )
 async def create_new_task(task: TaskCreate, user: UserInfo = Depends(get_current_user)):
@@ -80,7 +79,6 @@ async def delete_task(id: int, user: UserInfo = Depends(get_current_user)):
     description="Add user on the your task",
     response_description="TaskWithUsers",
     status_code=status.HTTP_200_OK,
-    response_model=TaskWithUsers,
     responses=TaskResponses.add_new_user_on_task,
 )
 async def add_user_on_task(id: int, new_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
@@ -99,7 +97,6 @@ async def add_user_on_task(id: int, new_user: str, type_connection: ConnectionTy
     description="Update connection type",
     response_description="TaskWithUsers",
     status_code=status.HTTP_200_OK,
-    response_model=TaskWithUsers,
     responses=TaskResponses.update_connection_type,
 )
 async def update_connection_type_for_user(id: int, email_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
@@ -118,7 +115,6 @@ async def update_connection_type_for_user(id: int, email_user: str, type_connect
     description="Delete connection",
     response_description="TaskWithUsers",
     status_code=status.HTTP_200_OK,
-    response_model=TaskWithUsers,
     responses=TaskResponses.delete_connection_user,
 )
 async def delete_connection_user(id: int, email_user: str, user: UserInfo = Depends(get_current_user)):

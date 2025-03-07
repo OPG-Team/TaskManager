@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (token && isIndexPage) {
         console.log("Токен есть и мы на index, подгружаем таски...");
         loadTasks();
+        setupForIndex();
     }
 });
 
@@ -55,10 +56,11 @@ async function refreshAccessToken() {
         });
 
         console.log("Статус ответа от /refresh:", response.status); // Отладка
-        const text = await response.text(); // Отладка текста ответа
-        console.log("Текстовый ответ от /refresh:", text);
 
         if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem("access_token")
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -97,7 +99,8 @@ function setupLoginForm() {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, password: password })
+                    body: JSON.stringify({ email, password: password }),
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
@@ -192,7 +195,27 @@ async function loadTasks() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            console.log("Ошибка от сервера:", errorData);
+
+            // Проверяем случай 403 с истёкшим токеном и наличием refresh
+            if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
+                console.log("Токен истёк, пытаемся обновить с refresh_token...");
+                try {
+                    await refreshAccessToken(); // Обновляем токен
+                    const newToken = localStorage.getItem('access_token'); // Получаем новый токен
+                    if (newToken) {
+                        console.log("Токен обновлён, повторяем запрос...");
+                        return loadTasks(); // Рекурсивно повторяем запрос
+                    } else {
+                        throw new Error("Не удалось получить новый access_token");
+                    }
+                } catch (refreshError) {
+                    console.error("Ошибка обновления токена:", refreshError);
+                    throw new Error("Не удалось обновить токен: " + refreshError.message);
+                }
+            } else {
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
         }
 
         const tasks = await response.json();
@@ -201,6 +224,9 @@ async function loadTasks() {
         // Отображаем задачи в списке
         const taskList = document.getElementById("tasks");
         taskList.innerHTML = ""; // Очищаем список перед добавлением
+
+        const userEmail = await getUserEmailFromToken(token);
+        const userRole = await getUserRoleFromToken(token);
 
         tasks.forEach(task => {
             const li = document.createElement("li");
@@ -213,10 +239,455 @@ async function loadTasks() {
                     return `${conn.user.email} (${conn.type})`;
                 }).join(", ")}</p>
             `;
+
+            // Проверяем права для редактирования, удаления и управления связями
+            const isOwner = task.connections.some(conn => conn.user.email === userEmail && conn.type === "Владелец");
+            const isCoauthor = task.connections.some(conn => conn.user.email === userEmail && conn.type === "Соавтор");
+            const isAdmin = userRole === "admin";
+
+            // Кнопка редактирования
+            if (isOwner || isCoauthor || isAdmin) {
+                const editButton = document.createElement("button");
+                editButton.textContent = "Редактировать";
+                editButton.className = "btn-edit-task";
+                editButton.addEventListener("click", () => {
+                    // Создаём форму редактирования
+                    const editForm = document.createElement("form");
+                    editForm.innerHTML = `
+                        <h3>Редактировать задачу</h3>
+                        <label>Название:</label>
+                        <input type="text" id="editTitle" value="${task.title}" required><br>
+                        <label>Описание:</label>
+                        <textarea id="editDescription">${task.description}</textarea><br>
+                        <label>Статус:</label>
+                        <select id="editStatus">
+                            <option value="Новая" ${task.status === "Новая" ? "selected" : ""}>Новая</option>
+                            <option value="В работе" ${task.status === "В работе" ? "selected" : ""}>В процессе</option>
+                            <option value="Завершена" ${task.status === "Завершена" ? "selected" : ""}>Завершено</option>
+                        </select><br>
+                        <button type="submit">Сохранить</button>
+                        <button type="button" id="cancelEdit">Отмена</button>
+                    `;
+
+                    // Удаляем старую форму, если она есть
+                    const existingForm = li.querySelector("form");
+                    if (existingForm) {
+                        existingForm.remove();
+                    }
+
+                    // Добавляем форму в элемент списка
+                    li.appendChild(editForm);
+
+                    // Обработчик для кнопки "Отмена"
+                    const cancelButton = editForm.querySelector("#cancelEdit");
+                    cancelButton.addEventListener("click", () => {
+                        editForm.remove(); // Удаляем форму
+                    });
+
+                    // Обработчик отправки формы
+                    editForm.addEventListener("submit", async (event) => {
+                        event.preventDefault();
+                        const newTitle = editForm.querySelector("#editTitle").value;
+                        const newDescription = editForm.querySelector("#editDescription").value;
+                        const newStatus = editForm.querySelector("#editStatus").value;
+                        await editTask(task.id, newTitle, newDescription, newStatus);
+                        editForm.remove(); // Удаляем форму после сохранения
+                    });
+                });
+                li.appendChild(editButton);
+            }
+
+            // Кнопка удаления
+            if (isOwner || isAdmin) {
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Удалить";
+                deleteButton.className = "btn-delete";
+                deleteButton.addEventListener("click", () => deleteTask(task.id));
+                li.appendChild(deleteButton);
+            }
+
+            // Кнопки удаления связей
+            if (isOwner || isAdmin) {
+                task.connections.forEach(conn => {
+                    if (conn.user.email !== userEmail) {
+                        const removeConnectionButton = document.createElement("button");
+                        removeConnectionButton.textContent = `Удалить ${conn.user.email}`;
+                        removeConnectionButton.className = "btn-delete";
+                        removeConnectionButton.addEventListener("click", () => removeConnection(task.id, conn.user.email));
+                        li.appendChild(removeConnectionButton);
+                    }
+                });
+            }
+
+            // Кнопка для добавления новой связи
+            if (isOwner || isAdmin) {
+                const addConnectionButton = document.createElement("button");
+                addConnectionButton.textContent = "Добавить связь";
+                addConnectionButton.className = "btn-add-conection";
+                addConnectionButton.addEventListener("click", () => {
+                    const emailToAdd = prompt("Введите email пользователя для добавления:");
+                    const connectionType = prompt("Выберите тип связи (Владелец, Соавтор, Обычный):"); // Изменил на латиницу
+                    if (emailToAdd && ["Владелец", "Соавтор", "Обычный"].includes(connectionType)) {
+                        addConnection(task.id, emailToAdd, connectionType);
+                    } else {
+                        alert("Неверный email или тип связи! Используйте Владелец, Соавтор или Обычный.");
+                    }
+                });
+                li.appendChild(addConnectionButton);
+            }
+
             taskList.appendChild(li);
         });
     } catch (error) {
         console.error("Ошибка загрузки задач:", error);
         alert("Failed to load tasks: " + error.message);
+    }
+}
+
+
+// Новая функция для получения email из токена
+async function getUserEmailFromToken(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1])); // Декодируем payload JWT
+        return payload.sub; // Предполагаем, что email хранится в поле sub
+    } catch (error) {
+        console.error("Ошибка декодирования токена:", error);
+        return null;
+    }
+}
+
+// Новая функция для получения роли из токена
+async function getUserRoleFromToken(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1])); // Декодируем payload JWT
+        return payload.role || "default"; // Предполагаем, что роль хранится в поле role, по умолчанию "user"
+    } catch (error) {
+        console.error("Ошибка декодирования токена:", error);
+        return "default";
+    }
+}
+
+
+async function editTask(taskId, newTitle, newDescription, newStatus) {
+    const token = localStorage.getItem('access_token');
+    try {
+        const response = await fetch(`${urlApi}/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title: newTitle,
+                description: newDescription,
+                status: newStatus
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.log("Ошибка от сервера:", errorData);
+
+            if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
+                console.log("Токен истёк, пытаемся обновить с refresh_token...");
+                try {
+                    await refreshAccessToken();
+                    const newToken = localStorage.getItem('access_token');
+                    if (newToken) {
+                        console.log("Токен обновлён, повторяем запрос...");
+                        const retryResponse = await fetch(`${urlApi}/tasks/${taskId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${newToken}`
+                            },
+                            body: JSON.stringify({
+                                title: newTitle,
+                                description: newDescription,
+                                status: newStatus
+                            })
+                        });
+                        if (!retryResponse.ok) {
+                            throw new Error(await retryResponse.json() || `HTTP error! status: ${retryResponse.status}`);
+                        }
+                    } else {
+                        throw new Error("Не удалось получить новый access_token");
+                    }
+                } catch (refreshError) {
+                    console.error("Ошибка обновления токена:", refreshError);
+                    throw new Error("Не удалось обновить токен: " + refreshError.message);
+                }
+            } else {
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+        }
+
+        loadTasks(); // Обновляем список задач
+        alert("Задача успешно отредактирована!");
+    } catch (error) {
+        console.error("Ошибка редактирования задачи:", error);
+        alert("Ошибка при редактировании задачи: " + error.message);
+    }
+}
+
+// Функция для удаления задачи
+async function deleteTask(taskId) {
+    const token = localStorage.getItem('access_token');
+    if (confirm("Вы уверены, что хотите удалить эту задачу?")) {
+        try {
+            const response = await fetch(`${urlApi}/tasks/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
+                    console.log("Токен истёк, пытаемся обновить с refresh_token...");
+                    try {
+                        await refreshAccessToken(); // Обновляем токен
+                        const newToken = localStorage.getItem('access_token'); // Получаем новый токен
+                        if (newToken) {
+                            console.log("Токен обновлён, повторяем запрос...");
+                            return loadTasks(); // Рекурсивно повторяем запрос
+                        } else {
+                            throw new Error("Не удалось получить новый access_token");
+                        }
+                    } catch (refreshError) {
+                        console.error("Ошибка обновления токена:", refreshError);
+                        throw new Error("Не удалось обновить токен: " + refreshError.message);
+                    }
+                } else {
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+            }
+
+            loadTasks(); // Обновляем список задач
+            alert("Задача успешно удалена!");
+        } catch (error) {
+            console.error("Ошибка удаления задачи:", error);
+            alert("Ошибка при удалении задачи: " + error.message);
+        }
+    }
+}
+
+// Функция для удаления связи
+async function removeConnection(taskId, emailToRemove) {
+    const token = localStorage.getItem('access_token');
+    if (confirm(`Вы уверены, что хотите удалить связь с ${emailToRemove}?`)) {
+        try {
+            const response = await fetch(`${urlApi}/tasks/delete_connection/${taskId}?email_user=${encodeURIComponent(emailToRemove)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'accept': 'application/json' // Добавляем заголовок accept, как в примере curl
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json(); // Декодируем тело ответа для получения деталей ошибки
+                console.log("Ошибка от сервера:", errorData);
+
+                if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
+                    console.log("Токен истёк, пытаемся обновить с refresh_token...");
+                    try {
+                        await refreshAccessToken(); // Обновляем токен
+                        const newToken = localStorage.getItem('access_token'); // Получаем новый токен
+                        if (newToken) {
+                            console.log("Токен обновлён, повторяем запрос...");
+                            // Повторяем запрос с новым токеном
+                            const retryResponse = await fetch(`${urlApi}/tasks/delete_connection/${taskId}?email_user=${encodeURIComponent(emailToRemove)}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${newToken}`,
+                                    'accept': 'application/json'
+                                }
+                            });
+                            if (!retryResponse.ok) {
+                                throw new Error(await retryResponse.json() || `HTTP error! status: ${retryResponse.status}`);
+                            }
+                        } else {
+                            throw new Error("Не удалось получить новый access_token");
+                        }
+                    } catch (refreshError) {
+                        console.error("Ошибка обновления токена:", refreshError);
+                        throw new Error("Не удалось обновить токен: " + refreshError.message);
+                    }
+                } else {
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+            }
+
+            loadTasks(); // Обновляем список задач
+            alert("Связь успешно удалена!");
+        } catch (error) {
+            console.error("Ошибка удаления связи:", error);
+            alert("Ошибка при удалении связи: " + error.message);
+        }
+    }
+}
+
+
+async function addConnection(taskId, emailToAdd, connectionType) {
+    const token = localStorage.getItem('access_token');
+    try {
+        const response = await fetch(`${urlApi}/tasks/add_user/${taskId}?new_user=${encodeURIComponent(emailToAdd)}&type_connection=${encodeURIComponent(connectionType)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'accept': 'application/json'
+            },
+            body: '' // Пустое тело, как в примере curl
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.log("Ошибка от сервера:", errorData);
+
+            if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
+                console.log("Токен истёк, пытаемся обновить с refresh_token...");
+                try {
+                    await refreshAccessToken();
+                    const newToken = localStorage.getItem('access_token');
+                    if (newToken) {
+                        console.log("Токен обновлён, повторяем запрос...");
+                        const retryResponse = await fetch(`${urlApi}/tasks/add_user/${taskId}?new_user=${encodeURIComponent(emailToAdd)}&type_connection=${encodeURIComponent(connectionType)}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${newToken}`,
+                                'accept': 'application/json'
+                            },
+                            body: ''
+                        });
+                        if (!retryResponse.ok) {
+                            throw new Error(await retryResponse.json() || `HTTP error! status: ${retryResponse.status}`);
+                        }
+                    } else {
+                        throw new Error("Не удалось получить новый access_token");
+                    }
+                } catch (refreshError) {
+                    console.error("Ошибка обновления токена:", refreshError);
+                    throw new Error("Не удалось обновить токен: " + refreshError.message);
+                }
+            } else {
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+        }
+
+        loadTasks(); // Обновляем список задач
+        alert("Связь успешно добавлена!");
+    } catch (error) {
+        console.error("Ошибка добавления связи:", error);
+        alert("Ошибка при добавлении связи: " + error.message);
+    }
+}
+
+async function setupForIndex() {
+    const logoutButton = document.getElementById("logoutButton");
+    const taskForm = document.getElementById("taskForm");
+
+    if (logoutButton && taskForm) {
+        // Обработчик для кнопки выхода
+        logoutButton.addEventListener("click", () => {
+            console.log("Нажата кнопка выхода...");
+            localStorage.removeItem('access_token'); // Очищаем access_token
+            console.log("Токен удалён из localStorage");
+            window.location.href = '/pages/login.html'; // Перенаправляем на страницу логина
+        });
+
+        // Обработчик для отправки формы задачи
+        taskForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            console.log("Форма задачи отправлена!");
+
+            // Получаем данные из формы
+            const title = taskForm.querySelector("#title").value;
+            const description = taskForm.querySelector("#description").value;
+            const status = taskForm.querySelector("#status").value || "Новая";
+
+            console.log("Данные формы:", { title, description, status });
+
+            try {
+                var token = localStorage.getItem('access_token');
+                if (!token) {
+                    try {
+                        await refreshAccessToken(); // Обновляем токен
+                        token = localStorage.getItem('access_token'); // Получаем новый токен
+                        if (token) {
+                            console.log("Токен обновлён");
+                        } else {
+                            throw new Error("Не удалось получить новый access_token");
+                        }
+                    } catch (refreshError) {
+                        console.error("Ошибка обновления токена:", refreshError);
+                        throw new Error("Не удалось обновить токен: " + refreshError.message);
+                    }
+                }
+
+                const response = await fetch(`${urlApi}/tasks/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title,
+                        status,
+                        description,
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status == 403) {
+                        try {
+                            await refreshAccessToken(); // Обновляем токен
+                            token = localStorage.getItem('access_token'); // Получаем новый токен
+                            if (!token) {
+                                throw new Error("Не удалось получить новый access_token");
+                            }
+                            console.log("Токен обновлён, повторяем запрос с новыми данными...");
+                            // Повторяем POST-запрос с сохранёнными данными
+                            const retryResponse = await fetch(`${urlApi}/tasks/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    title,
+                                    status,
+                                    description,
+                                })
+                            });
+                            if (!retryResponse.ok) {
+                                throw new Error(await retryResponse.json() || `HTTP error! status: ${retryResponse.status}`);
+                            }
+                            // Если повторный запрос успешен, продолжаем
+                        } catch (refreshError) {
+                            console.error("Ошибка обновления токена:", refreshError);
+                            throw new Error("Не удалось обновить токен: " + refreshError.message);
+                        }
+                    }
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                // Очищаем форму после успешного создания
+                taskForm.reset();
+                alert("Задача успешно добавлена!");
+                loadTasks(); // Обновляем список задач
+            } catch (error) {
+                console.error("Ошибка создания задачи:", error);
+                alert("Ошибка при создании задачи: " + error.message);
+            }
+        });
+    } else {
+        console.log("Кнопка выхода или форма задачи не найдены");
     }
 }
