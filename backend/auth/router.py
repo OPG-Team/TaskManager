@@ -76,7 +76,6 @@ async def refresh_token_point(request: Request):
 )
 async def logout(request: Request, user_data: UserInfo = Depends(get_current_user)):
     refresh_token = request.cookies.get("refresh_token")
-    print(refresh_token)
     if refresh_token:
         await request.app.redis.add_refresh_token_email(user_data.email, refresh_token)
     return Response(status_code=status.HTTP_200_OK)
