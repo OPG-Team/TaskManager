@@ -25,6 +25,7 @@ class UserErrorCode:
         DATA_OUT_OF_DATE: The data is out of date.
         EMAIL_ALREADY_EXISTS: Email is already taken.
         USER_NOT_FOUND: User not found.
+        REFRESH_TOKEN_IN_BLACK_LIST: Refresh_token in black list.
     """
     BAD_CREDENTIALS = "BAD_CREDENTIALS"
     USER_NOT_ACTIVE = "USER_NOT_ACTIVE"
@@ -34,6 +35,7 @@ class UserErrorCode:
     DATA_OUT_OF_DATE = "DATA_OUT_OF_DATE"
     EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS"
     USER_NOT_FOUND = "USER_NOT_FOUND"
+    REFRESH_TOKEN_IN_BLACK_LIST = "REFRESH_TOKEN_IN_BLACK_LIST"
 
 
 class HTTTPError:
@@ -43,6 +45,7 @@ class HTTTPError:
         BAD_CREDENTIALS_400: Bad credentials.
         BAD_CREDENTIALS_401: Could not validate credentials.
         INVALID_TOKEN_401: Invalid token.
+        REFRESH_TOKEN_IN_BLACK_LIST_401: Refresh_token in black list.
         BAD_CREDENTIALS_403: Access token expires but refresh exists.
         NO_ACCESS_RIGHTS_403: No required access rights.
         USER_NOT_ACTIVE_403: User is not active.
@@ -72,6 +75,14 @@ class HTTTPError:
         detail=ErrorDetail(
             code=UserErrorCode.INVALID_TOKEN,
             reason="Invalid token"
+        ).model_dump(),
+    )
+
+    REFRESH_TOKEN_IN_BLACK_LIST_401 = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=ErrorDetail(
+            code=UserErrorCode.REFRESH_TOKEN_IN_BLACK_LIST,
+            reason="Refresh_token in black list"
         ).model_dump(),
     )
 

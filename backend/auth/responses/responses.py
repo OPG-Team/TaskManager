@@ -44,6 +44,7 @@ class UsersResponse:
         status.HTTP_401_UNAUTHORIZED: convert_to_example([
             HTTTPError.BAD_CREDENTIALS_401,
             HTTTPError.INVALID_TOKEN_401,
+            HTTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401,
         ]),
         status.HTTP_403_FORBIDDEN: convert_to_example([
             HTTTPError.BAD_CREDENTIALS_403,

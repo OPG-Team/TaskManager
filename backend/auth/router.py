@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Response, Request, Depends
+from fastapi import APIRouter, status, Response, Request, Depends, HTTPException
 from .utils import get_password_hash, create_access_token, create_refresh_token
 from .dependencies import refresh_access_token, get_current_user
 from .models import User, Token, UserInfo
@@ -58,8 +58,28 @@ async def refresh_token_point(request: Request):
     if not refresh_token:
         raise HTTTPError.BAD_CREDENTIALS_401
 
+    email = await request.app.redis.get_refresh_token_email(refresh_token)
+    if email:
+        raise HTTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401
+
     access_token = await refresh_access_token(refresh_token=refresh_token)
     return Token(access_token=access_token, token_type="Bearer")
+
+
+@router.post(
+    path="/logout",
+    summary="Logout, add refresh_token to black list",
+    description="Logout, add refresh_token to black list",
+    response_description="Status code",
+    status_code=status.HTTP_200_OK,
+    responses=base_auth_responses,
+)
+async def logout(request: Request, user_data: UserInfo = Depends(get_current_user)):
+    refresh_token = request.cookies.get("refresh_token")
+    print(refresh_token)
+    if refresh_token:
+        await request.app.redis.add_refresh_token_email(user_data.email, refresh_token)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.get(

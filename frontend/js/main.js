@@ -594,11 +594,40 @@ async function setupForIndex() {
 
     if (logoutButton && taskForm) {
         // Обработчик для кнопки выхода
-        logoutButton.addEventListener("click", () => {
+        logoutButton.addEventListener("click", async () => {
             console.log("Нажата кнопка выхода...");
-            localStorage.removeItem('access_token'); // Очищаем access_token
+        
+            // Получаем текущий access_token из localStorage
+            const accessToken = localStorage.getItem('access_token');
+        
+            if (accessToken) {
+                try {
+                    // Отправляем POST-запрос на сервер для выполнения logout
+                    const response = await fetch(`${urlApi}/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+        
+                    if (response.ok) {
+                        console.log("Успешный выход из системы");
+                    } else {
+                        console.error("Ошибка при выходе из системы:", response.statusText);
+                    }
+                } catch (error) {
+                    console.error("Ошибка при отправке запроса на logout:", error);
+                }
+            }
+        
+            // Очищаем access_token из localStorage
+            localStorage.removeItem('access_token');
             console.log("Токен удалён из localStorage");
-            window.location.href = '/pages/login.html'; // Перенаправляем на страницу логина
+        
+            // Перенаправляем на страницу логина
+            window.location.href = '/pages/login.html';
         });
 
         // Обработчик для отправки формы задачи
