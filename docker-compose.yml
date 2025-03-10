@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: PostgresDB
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: Redis
+    restart: always
+    volumes:
+      - redis_data:/data  # Чтобы данные Redis сохранялись
+    networks:
+      - app_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: App
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
+      - REDIS_URL=redis://redis:6379  # Redis будет доступен по имени "redis"
+      - SECRET_KEY_JWT=${SECRET_KEY_JWT}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - FRONTEND_URL=http://127.0.0.1:8085
+
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "pip install --no-cache-dir alembic asyncpg python-dotenv && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8005"
+    networks:
+      - app_network
+    ports:
+      - 8005:8005
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: Frontend
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8085:8085"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
