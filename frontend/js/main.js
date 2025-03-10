@@ -197,15 +197,14 @@ async function loadTasks() {
             const errorData = await response.json();
             console.log("Ошибка от сервера:", errorData);
 
-            // Проверяем случай 403 с истёкшим токеном и наличием refresh
             if (response.status === 403 && errorData.detail && errorData.detail.code === "BAD_CREDENTIALS" && errorData.detail.reason === "Access token expires but refresh exists") {
                 console.log("Токен истёк, пытаемся обновить с refresh_token...");
                 try {
-                    await refreshAccessToken(); // Обновляем токен
-                    const newToken = localStorage.getItem('access_token'); // Получаем новый токен
+                    await refreshAccessToken();
+                    const newToken = localStorage.getItem('access_token');
                     if (newToken) {
                         console.log("Токен обновлён, повторяем запрос...");
-                        return loadTasks(); // Рекурсивно повторяем запрос
+                        return loadTasks();
                     } else {
                         throw new Error("Не удалось получить новый access_token");
                     }
@@ -218,15 +217,20 @@ async function loadTasks() {
             }
         }
 
-        const tasks = await response.json();
-        console.log("Задачи загружены:", tasks);
+        const tasksData = await response.json();
+        console.log("Задачи загружены:", tasksData);
+
+        // Преобразуем объект задач в массив
+        const tasks = tasksData ? Object.values(tasksData) : [];
 
         // Отображаем задачи в списке
         const taskList = document.getElementById("tasks");
-        taskList.innerHTML = ""; // Очищаем список перед добавлением
 
+        // Получаем email и роль пользователя
         const userEmail = await getUserEmailFromToken(token);
         const userRole = await getUserRoleFromToken(token);
+
+        taskList.innerHTML = ""; // Очищаем список перед добавлением
 
         tasks.forEach(task => {
             const li = document.createElement("li");
@@ -251,8 +255,8 @@ async function loadTasks() {
                 editButton.textContent = "Редактировать";
                 editButton.className = "btn-edit-task";
                 editButton.addEventListener("click", () => {
-                    // Создаём форму редактирования
                     const editForm = document.createElement("form");
+                    editForm.className = "task-form";
                     editForm.innerHTML = `
                         <h3>Редактировать задачу</h3>
                         <label>Название:</label>
@@ -262,36 +266,32 @@ async function loadTasks() {
                         <label>Статус:</label>
                         <select id="editStatus">
                             <option value="Новая" ${task.status === "Новая" ? "selected" : ""}>Новая</option>
-                            <option value="В работе" ${task.status === "В работе" ? "selected" : ""}>В процессе</option>
-                            <option value="Завершена" ${task.status === "Завершена" ? "selected" : ""}>Завершено</option>
+                            <option value="В работе" ${task.status === "В работе" ? "selected" : ""}>В работе</option>
+                            <option value="Завершена" ${task.status === "Завершена" ? "selected" : ""}>Завершена</option>
                         </select><br>
                         <button type="submit">Сохранить</button>
                         <button type="button" id="cancelEdit">Отмена</button>
                     `;
 
-                    // Удаляем старую форму, если она есть
                     const existingForm = li.querySelector("form");
                     if (existingForm) {
                         existingForm.remove();
                     }
 
-                    // Добавляем форму в элемент списка
                     li.appendChild(editForm);
 
-                    // Обработчик для кнопки "Отмена"
                     const cancelButton = editForm.querySelector("#cancelEdit");
                     cancelButton.addEventListener("click", () => {
-                        editForm.remove(); // Удаляем форму
+                        editForm.remove();
                     });
 
-                    // Обработчик отправки формы
                     editForm.addEventListener("submit", async (event) => {
                         event.preventDefault();
                         const newTitle = editForm.querySelector("#editTitle").value;
                         const newDescription = editForm.querySelector("#editDescription").value;
                         const newStatus = editForm.querySelector("#editStatus").value;
                         await editTask(task.id, newTitle, newDescription, newStatus);
-                        editForm.remove(); // Удаляем форму после сохранения
+                        editForm.remove();
                     });
                 });
                 li.appendChild(editButton);
@@ -325,19 +325,221 @@ async function loadTasks() {
                 addConnectionButton.textContent = "Добавить связь";
                 addConnectionButton.className = "btn-add-conection";
                 addConnectionButton.addEventListener("click", () => {
-                    const emailToAdd = prompt("Введите email пользователя для добавления:");
-                    const connectionType = prompt("Выберите тип связи (Владелец, Соавтор, Обычный):"); // Изменил на латиницу
-                    if (emailToAdd && ["Владелец", "Соавтор", "Обычный"].includes(connectionType)) {
-                        addConnection(task.id, emailToAdd, connectionType);
-                    } else {
-                        alert("Неверный email или тип связи! Используйте Владелец, Соавтор или Обычный.");
+                    const addConnectionForm = document.createElement("form");
+                    addConnectionForm.className = "task-form";
+                    addConnectionForm.innerHTML = `
+                        <h3>Добавить связь</h3>
+                        <label>Email пользователя:</label>
+                        <input type="email" id="addEmail" placeholder="Введите email" required><br>
+                        <label>Тип связи:</label>
+                        <select id="addConnectionType">
+                            <option value="Владелец">Владелец</option>
+                            <option value="Соавтор">Соавтор</option>
+                            <option value="Обычный" selected>Обычный</option>
+                        </select><br>
+                        <button type="submit">Сохранить</button>
+                        <button type="button" id="cancelAddConnection">Отмена</button>
+                    `;
+
+                    const existingForm = li.querySelector("form");
+                    if (existingForm) {
+                        existingForm.remove();
                     }
+
+                    li.appendChild(addConnectionForm);
+
+                    const cancelButton = addConnectionForm.querySelector("#cancelAddConnection");
+                    cancelButton.addEventListener("click", () => {
+                        addConnectionForm.remove();
+                    });
+
+                    addConnectionForm.addEventListener("submit", async (event) => {
+                        event.preventDefault();
+                        const emailToAdd = addConnectionForm.querySelector("#addEmail").value;
+                        const connectionType = addConnectionForm.querySelector("#addConnectionType").value;
+                        if (emailToAdd && ["Владелец", "Соавтор", "Обычный"].includes(connectionType)) {
+                            await addConnection(task.id, emailToAdd, connectionType);
+                            addConnectionForm.remove();
+                        } else {
+                            alert("Неверный email или тип связи! Используйте Владелец, Соавтор или Обычный.");
+                        }
+                    });
                 });
                 li.appendChild(addConnectionButton);
             }
 
             taskList.appendChild(li);
         });
+
+        // Добавление фильтрации поверх загруженных задач
+        const filterStatus = document.getElementById("filterStatus");
+        const filterTimeAfter = document.getElementById("filterTimeAfter");
+        const applyFiltersButton = document.getElementById("applyFilters");
+        const clearFiltersButton = document.getElementById("clearFilters");
+
+        // Функция применения фильтров
+        function applyFilters() {
+            const filteredTasks = tasks.filter(task => {
+                const taskDate = new Date(task.time).toISOString().split('T')[0]; // Извлекаем дату
+                const matchesStatus = !filterStatus.value || task.status === filterStatus.value;
+                const matchesTime = !filterTimeAfter.value || taskDate >= filterTimeAfter.value;
+                return matchesStatus && matchesTime;
+            });
+
+            taskList.innerHTML = ""; // Очищаем текущий список
+            filteredTasks.forEach(task => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <h3>${task.title}</h3>
+                    <p><strong>Status:</strong> ${task.status}</p>
+                    <p><strong>Description:</strong> ${task.description}</p>
+                    <p><strong>Created at:</strong> ${new Date(task.time).toLocaleString()}</p>
+                    <p><strong>Users:</strong> ${task.connections.map(conn => {
+                        return `${conn.user.email} (${conn.type})`;
+                    }).join(", ")}</p>
+                `;
+
+                const isOwner = task.connections.some(conn => conn.user.email === userEmail && conn.type === "Владелец");
+                const isCoauthor = task.connections.some(conn => conn.user.email === userEmail && conn.type === "Соавтор");
+                const isAdmin = userRole === "admin";
+
+                if (isOwner || isCoauthor || isAdmin) {
+                    const editButton = document.createElement("button");
+                    editButton.textContent = "Редактировать";
+                    editButton.className = "btn-edit-task";
+                    editButton.addEventListener("click", () => {
+                        const editForm = document.createElement("form");
+                        editForm.className = "task-form";
+                        editForm.innerHTML = `
+                            <h3>Редактировать задачу</h3>
+                            <label>Название:</label>
+                            <input type="text" id="editTitle" value="${task.title}" required><br>
+                            <label>Описание:</label>
+                            <textarea id="editDescription">${task.description}</textarea><br>
+                            <label>Статус:</label>
+                            <select id="editStatus">
+                                <option value="Новая" ${task.status === "Новая" ? "selected" : ""}>Новая</option>
+                                <option value="В работе" ${task.status === "В работе" ? "selected" : ""}>В работе</option>
+                                <option value="Завершена" ${task.status === "Завершена" ? "selected" : ""}>Завершена</option>
+                            </select><br>
+                            <button type="submit">Сохранить</button>
+                            <button type="button" id="cancelEdit">Отмена</button>
+                        `;
+
+                        const existingForm = li.querySelector("form");
+                        if (existingForm) {
+                            existingForm.remove();
+                        }
+
+                        li.appendChild(editForm);
+
+                        const cancelButton = editForm.querySelector("#cancelEdit");
+                        cancelButton.addEventListener("click", () => {
+                            editForm.remove();
+                        });
+
+                        editForm.addEventListener("submit", async (event) => {
+                            event.preventDefault();
+                            const newTitle = editForm.querySelector("#editTitle").value;
+                            const newDescription = editForm.querySelector("#editDescription").value;
+                            const newStatus = editForm.querySelector("#editStatus").value;
+                            await editTask(task.id, newTitle, newDescription, newStatus);
+                            editForm.remove();
+                        });
+                    });
+                    li.appendChild(editButton);
+                }
+
+                if (isOwner || isAdmin) {
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "Удалить";
+                    deleteButton.className = "btn-delete";
+                    deleteButton.addEventListener("click", () => deleteTask(task.id));
+                    li.appendChild(deleteButton);
+                }
+
+                if (isOwner || isAdmin) {
+                    task.connections.forEach(conn => {
+                        if (conn.user.email !== userEmail) {
+                            const removeConnectionButton = document.createElement("button");
+                            removeConnectionButton.textContent = `Удалить ${conn.user.email}`;
+                            removeConnectionButton.className = "btn-delete";
+                            removeConnectionButton.addEventListener("click", () => removeConnection(task.id, conn.user.email));
+                            li.appendChild(removeConnectionButton);
+                        }
+                    });
+                }
+
+                if (isOwner || isAdmin) {
+                    const addConnectionButton = document.createElement("button");
+                    addConnectionButton.textContent = "Добавить связь";
+                    addConnectionButton.className = "btn-add-conection";
+                    addConnectionButton.addEventListener("click", () => {
+                        const addConnectionForm = document.createElement("form");
+                        addConnectionForm.className = "task-form";
+                        addConnectionForm.innerHTML = `
+                            <h3>Добавить связь</h3>
+                            <label>Email пользователя:</label>
+                            <input type="email" id="addEmail" placeholder="Введите email" required><br>
+                            <label>Тип связи:</label>
+                            <select id="addConnectionType">
+                                <option value="Владелец">Владелец</option>
+                                <option value="Соавтор">Соавтор</option>
+                                <option value="Обычный" selected>Обычный</option>
+                            </select><br>
+                            <button type="submit">Сохранить</button>
+                            <button type="button" id="cancelAddConnection">Отмена</button>
+                        `;
+
+                        const existingForm = li.querySelector("form");
+                        if (existingForm) {
+                            existingForm.remove();
+                        }
+
+                        li.appendChild(addConnectionForm);
+
+                        const cancelButton = addConnectionForm.querySelector("#cancelAddConnection");
+                        cancelButton.addEventListener("click", () => {
+                            addConnectionForm.remove();
+                        });
+
+                        addConnectionForm.addEventListener("submit", async (event) => {
+                            event.preventDefault();
+                            const emailToAdd = addConnectionForm.querySelector("#addEmail").value;
+                            const connectionType = addConnectionForm.querySelector("#addConnectionType").value;
+                            if (emailToAdd && ["Владелец", "Соавтор", "Обычный"].includes(connectionType)) {
+                                await addConnection(task.id, emailToAdd, connectionType);
+                                addConnectionForm.remove();
+                            } else {
+                                alert("Неверный email или тип связи! Используйте Владелец, Соавтор или Обычный.");
+                            }
+                        });
+                    });
+                    li.appendChild(addConnectionButton);
+                }
+
+                taskList.appendChild(li);
+            });
+
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = "<li>Нет задач для отображения</li>";
+            }
+        }
+
+        // Обработчик кнопки "Применить фильтры"
+        applyFiltersButton.addEventListener("click", () => {
+            applyFilters();
+        });
+
+        // Обработчик кнопки "Сбросить фильтры"
+        clearFiltersButton.addEventListener("click", () => {
+            filterStatus.value = "";
+            filterTimeAfter.value = "2025-03-01";
+            applyFilters();
+        });
+
+        // Изначально рендерим все задачи
+        applyFilters();
     } catch (error) {
         console.error("Ошибка загрузки задач:", error);
         alert("Failed to load tasks: " + error.message);

@@ -1,0 +1,97 @@
+/* Стили для блока фильтров */
+#filters {
+    background-color: #f4f7fa; /* Светлый фон для выделения блока */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Лёгкая тень для глубины */
+    margin-bottom: 20px;
+    display: flex; /* Используем flexbox для компоновки */
+    flex-wrap: wrap; /* Перенос элементов на новую строку, если не помещаются */
+    gap: 15px; /* Отступы между элементами */
+    align-items: center; /* Выравнивание элементов по центру по вертикали */
+}
+
+/* Заголовок */
+#filters h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+    flex: 0 0 100%; /* Заголовок занимает всю ширину */
+}
+
+/* Стили для меток */
+#filters label {
+    font-weight: 500;
+    color: #555;
+    margin-right: 5px;
+}
+
+/* Стили для селекта и поля даты */
+#filters select,
+#filters input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 0.9rem;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+/* Эффект при фокусе */
+#filters select:focus,
+#filters input[type="date"]:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
+}
+
+/* Стили для кнопок */
+#filters button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Кнопка "Применить фильтры" */
+#applyFilters {
+    background-color: #28a745;
+    color: white;
+}
+
+#applyFilters:hover {
+    background-color: #218838;
+}
+
+/* Кнопка "Сбросить фильтры" */
+#clearFilters {
+    background-color: #dc3545;
+    color: white;
+}
+
+#clearFilters:hover {
+    background-color: #c82333;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 600px) {
+    #filters {
+        flex-direction: column; /* Вертикальная компоновка на маленьких экранах */
+        align-items: flex-start;
+    }
+
+    #filters label {
+        margin-bottom: 5px;
+    }
+
+    #filters select,
+    #filters input[type="date"],
+    #filters button {
+        width: 100%; /* Элементы занимают всю ширину */
+        margin-bottom: 10px;
+    }
+}
