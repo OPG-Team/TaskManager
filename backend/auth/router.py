@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Response, Request, Depends, HTTPException
+from fastapi import APIRouter, status, Response, Request, Depends
 from .utils import get_password_hash, create_access_token, create_refresh_token
 from .dependencies import refresh_access_token, get_current_user
 from .models import User, Token, UserInfo

@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Depends, status
+from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt, ExpiredSignatureError
 from auth.utils import create_access_token
