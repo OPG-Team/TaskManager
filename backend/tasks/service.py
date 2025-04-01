@@ -1,17 +1,40 @@
 import datetime
+import locale
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from auth.database import UserOrm, ConnectionOrm, ConnectionType, UserRole
 from auth.models import UserInfo, ConnectionWithUser
 from database import new_session
+from logger import app_logger
 from tasks.database import TaskOrm
 from tasks.models import TaskCreate, TaskWithUsers
-from tasks.responses.http_errors import HTTTPError as HTTTPError_task
-from auth.responses.http_errors import HTTTPError as HTTTPError_auth
+from tasks.responses.http_errors import HTTPError as HTTPError_task
+from auth.responses.http_errors import HTTPError as HTTPError_auth
+
+
+for loc in ['ru_RU.UTF-8', 'ru_RU.utf8', 'Russian', '']:
+    try:
+        locale.setlocale(locale.LC_TIME, loc)
+        app_logger.info(f"Locale setting: {loc}")
+        break
+    except locale.Error:
+        continue
 
 
 class TaskRepository:
+    @classmethod
+    async def get_connect_by_task_id_and_email(cls, email_user: str, task_id: int, session: AsyncSession):
+        connection = await session.execute(
+            select(ConnectionOrm).where(
+                ConnectionOrm.id_task == task_id,
+                ConnectionOrm.email == email_user
+            )
+        )
+        connection = connection.scalars().first()
+        return connection
+
     @classmethod
     async def get_all_tasks_and_users(cls, user: UserInfo) -> List[TaskWithUsers]:
         """Retrieves all tasks from the database with their associated users and connection types.
@@ -60,7 +83,7 @@ class TaskRepository:
                     "time": task.time,
                     "connections": connection_list
                 }
-                tasks_with_connections.append(TaskWithUsers(**task_dict))
+                tasks_with_connections.append(TaskWithUsers.model_validate(task_dict))
 
             return tasks_with_connections
 
@@ -90,7 +113,7 @@ class TaskRepository:
 
             user = await session.get(UserOrm, user_email)
             if not user:
-                raise HTTTPError_auth.USER_NOT_FOUNT_404
+                raise HTTPError_auth.USER_NOT_FOUNT_404
 
             connection = ConnectionOrm(
                 email=user_email,
@@ -120,20 +143,12 @@ class TaskRepository:
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
             if not task:
-                raise HTTTPError_task.TASK_NOT_FOUNT_404
+                raise HTTPError_task.TASK_NOT_FOUNT_404
 
             if user.role == UserRole.DEFAULT:
-                # Проверяем тип связи для пользователя с ролью DEFAULT
-                connection = await session.execute(
-                    select(ConnectionOrm).where(
-                        ConnectionOrm.id_task == task_id,
-                        ConnectionOrm.email == user.email
-                    )
-                )
-                connection = connection.scalars().first()
-                # Разрешаем обновление только если тип связи OWNER или CO_CREATOR
+                connection = await cls.get_connect_by_task_id_and_email(email_user=str(user.email), task_id=task_id, session=session)
                 if not connection or connection.type not in [ConnectionType.OWNER, ConnectionType.CO_CREATOR]:
-                    raise HTTTPError_auth.NO_ACCESS_RIGHTS_403
+                    raise HTTPError_auth.NO_ACCESS_RIGHTS_403
 
             # Обновляем поля задачи
             for field, value in task_data.model_dump(exclude_unset=True).items():
@@ -159,18 +174,12 @@ class TaskRepository:
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
             if not task:
-                raise HTTTPError_task.TASK_NOT_FOUNT_404
+                raise HTTPError_task.TASK_NOT_FOUNT_404
 
             if user.role == UserRole.DEFAULT:
-                connection = await session.execute(
-                    select(ConnectionOrm).where(
-                        ConnectionOrm.id_task == task_id,
-                        ConnectionOrm.email == user.email
-                    )
-                )
-                connection = connection.scalars().first()
-                if not connection or connection.type != ConnectionType.OWNER:
-                    raise HTTTPError_auth.NO_ACCESS_RIGHTS_403
+                connection = await cls.get_connect_by_task_id_and_email(email_user=str(user.email), task_id=task_id, session=session)
+                if not connection or connection.type not in [ConnectionType.OWNER]:
+                    raise HTTPError_auth.NO_ACCESS_RIGHTS_403
 
             await session.delete(task)
             await session.commit()
@@ -198,31 +207,20 @@ class TaskRepository:
             # Получаем задачу
             task = await session.get(TaskOrm, task_id)
             if not task:
-                raise HTTTPError_task.TASK_NOT_FOUNT_404
+                raise HTTPError_task.TASK_NOT_FOUNT_404
 
             if user.role == UserRole.DEFAULT:
-                owner_connection = await session.execute(
-                    select(ConnectionOrm).where(
-                        ConnectionOrm.id_task == task_id,
-                        ConnectionOrm.email == user.email,
-                        ConnectionOrm.type == ConnectionType.OWNER
-                    )
-                )
-                if not owner_connection.scalars().first():
-                    raise HTTTPError_auth.NO_ACCESS_RIGHTS_403
+                connection = await cls.get_connect_by_task_id_and_email(email_user=str(user.email), task_id=task_id, session=session)
+                if not connection or connection.type not in [ConnectionType.OWNER]:
+                    raise HTTPError_auth.NO_ACCESS_RIGHTS_403
 
             new_user = await session.get(UserOrm, new_user_email)
             if not new_user:
-                raise HTTTPError_auth.USER_NOT_FOUNT_404
+                raise HTTPError_auth.USER_NOT_FOUNT_404
 
-            existing_connection = await session.execute(
-                select(ConnectionOrm).where(
-                    ConnectionOrm.id_task == task_id,
-                    ConnectionOrm.email == new_user_email
-                )
-            )
-            if existing_connection.scalars().first():
-                raise HTTTPError_task.USER_ALREADY_ASSOCIATED_400
+            existing_connection = await cls.get_connect_by_task_id_and_email(email_user=new_user_email, task_id=task_id, session=session)
+            if existing_connection:
+                raise HTTPError_task.USER_ALREADY_ASSOCIATED_400
 
             new_connection = ConnectionOrm(
                 email=new_user_email,
@@ -254,32 +252,20 @@ class TaskRepository:
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
             if not task:
-                raise HTTTPError_task.TASK_NOT_FOUNT_404
+                raise HTTPError_task.TASK_NOT_FOUNT_404
 
             if current_user.role == UserRole.DEFAULT:
-                owner_connection = await session.execute(
-                    select(ConnectionOrm).where(
-                        ConnectionOrm.id_task == task_id,
-                        ConnectionOrm.email == current_user.email,
-                        ConnectionOrm.type == ConnectionType.OWNER
-                    )
-                )
-                if not owner_connection.scalars().first():
-                    raise HTTTPError_auth.NO_ACCESS_RIGHTS_403
+                connection = await cls.get_connect_by_task_id_and_email(email_user=str(current_user.email), task_id=task_id, session=session)
+                if not connection or connection.type not in [ConnectionType.OWNER]:
+                    raise HTTPError_auth.NO_ACCESS_RIGHTS_403
 
-            connection = await session.execute(
-                select(ConnectionOrm).where(
-                    ConnectionOrm.id_task == task_id,
-                    ConnectionOrm.email == email_user
-                )
-            )
-            connection = connection.scalars().first()
+            connection = await cls.get_connect_by_task_id_and_email(email_user=email_user, task_id=task_id, session=session)
             if not connection:
-                raise HTTTPError_task.CONNECTION_NOT_FOUND_404
+                raise HTTPError_task.CONNECTION_NOT_FOUND_404
 
             # Проверяем, не пытается ли владелец изменить свой собственный тип связи
             if connection.email == current_user.email and type_connection != ConnectionType.OWNER:
-                raise HTTTPError_task.OWNER_CANNOT_CHANGE_OWN_CONNECTION_TYPE_400
+                raise HTTPError_task.OWNER_CANNOT_CHANGE_OWN_CONNECTION_TYPE_400
 
             # Обновляем тип связи
             connection.type = type_connection
@@ -308,34 +294,21 @@ class TaskRepository:
             # Получаем задачу
             task = await session.get(TaskOrm, task_id)
             if not task:
-                raise HTTTPError_task.TASK_NOT_FOUNT_404
+                raise HTTPError_task.TASK_NOT_FOUNT_404
 
-            # Проверяем, является ли текущий пользователь владельцем
             if current_user.role == UserRole.DEFAULT:
-                owner_connection = await session.execute(
-                    select(ConnectionOrm).where(
-                        ConnectionOrm.id_task == task_id,
-                        ConnectionOrm.email == current_user.email,
-                        ConnectionOrm.type == ConnectionType.OWNER
-                    )
-                )
-                if not owner_connection.scalars().first():
-                    raise HTTTPError_auth.NO_ACCESS_RIGHTS_403
+                connection = await cls.get_connect_by_task_id_and_email(email_user=str(current_user.email), task_id=task_id, session=session)
+                if not connection or connection.type not in [ConnectionType.OWNER]:
+                    raise HTTPError_auth.NO_ACCESS_RIGHTS_403
 
             # Проверяем, не пытается ли владелец удалить свою связь
             if user_email_to_delete == current_user.email:
-                raise HTTTPError_task.OWNER_CANNOT_DELETE_OWN_CONNECTION_400
+                raise HTTPError_task.OWNER_CANNOT_DELETE_OWN_CONNECTION_400
 
             # Проверяем существование связи для удаления
-            connection_to_delete = await session.execute(
-                select(ConnectionOrm).where(
-                    ConnectionOrm.id_task == task_id,
-                    ConnectionOrm.email == user_email_to_delete
-                )
-            )
-            connection = connection_to_delete.scalars().first()
+            connection = await cls.get_connect_by_task_id_and_email(email_user=user_email_to_delete, task_id=task_id, session=session)
             if not connection:
-                raise HTTTPError_task.CONNECTION_NOT_FOUND_404
+                raise HTTPError_task.CONNECTION_NOT_FOUND_404
 
             # Удаляем связь
             await session.delete(connection)

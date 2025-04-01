@@ -1,8 +1,8 @@
 from fastapi import status
-from auth.responses.http_errors import HTTTPError as HTTTPError_auth
+from auth.responses.http_errors import HTTPError as HTTTPError_auth
 from auth.responses.responses import base_auth_responses
 from auth.responses.utils import convert_to_example, merge_responses
-from tasks.responses.http_errors import HTTTPError as HTTTPError_task
+from tasks.responses.http_errors import HTTPError as HTTTPError_task
 
 
 class TaskResponses:

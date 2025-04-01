@@ -18,7 +18,7 @@ class TaskErrorCode:
     OWNER_CANNOT_DELETE_OWN_CONNECTION = "OWNER_CANNOT_DELETE_OWN_CONNECTION"
 
 
-class HTTTPError:
+class HTTPError:
     """Аll error codes for books.
 
     Attributes:

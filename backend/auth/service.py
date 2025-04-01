@@ -6,7 +6,7 @@ from .utils import verify_password
 from .database import UserOrm, UserRole
 from database import new_session
 from .models import User
-from .responses.http_errors import HTTTPError
+from .responses.http_errors import HTTPError
 
 
 class UserRepository:
@@ -36,7 +36,7 @@ class UserRepository:
                 return user.email
             except IntegrityError:
                 await session.rollback()
-                raise HTTTPError.EMAIL_ALREADY_EXISTS_409
+                raise HTTPError.EMAIL_ALREADY_EXISTS_409
 
     @classmethod
     async def authenticate_user(cls, email: EmailStr, password: str) -> Optional[UserOrm]:

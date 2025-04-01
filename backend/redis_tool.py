@@ -10,6 +10,9 @@ class RedisDB:
     def __init__(self, url: str) -> None:
         self.__redis_connect = redis.from_url(url=url)
 
+    async def ping(self):
+        await self.__redis_connect.ping()
+
     async def add_refresh_token_email(self, email: str, refresh_token: str) -> None:
         await self.__redis_connect.setex(refresh_token, REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, email)
 
