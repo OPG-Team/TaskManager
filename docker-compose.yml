@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:17
@@ -13,15 +11,27 @@ services:
       - pg_data:/var/lib/postgresql/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
 
   redis:
-    image: redis:latest
+    image: redis:7.4.2
     container_name: Redis
     restart: always
     volumes:
-      - redis_data:/data  # Чтобы данные Redis сохранялись
+      - redis_data:/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
 
   backend:
     build:
@@ -29,17 +39,18 @@ services:
       dockerfile: backend/Dockerfile
     container_name: App
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
-      - REDIS_URL=redis://redis:6379  # Redis будет доступен по имени "redis"
+      - REDIS_URL=redis://redis:6379
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
       - FRONTEND_URL=http://127.0.0.1:8085
-
     volumes:
       - ./backend:/app
     restart: unless-stopped
