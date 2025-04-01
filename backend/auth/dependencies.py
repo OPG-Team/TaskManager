@@ -4,9 +4,10 @@ from jose import JWTError, jwt, ExpiredSignatureError
 from auth.utils import create_access_token
 from auth.database import UserOrm
 from auth.models import UserInfo
-from auth.responses.http_errors import HTTTPError
+from auth.responses.http_errors import HTTPError
 from auth.service import UserRepository
 from config import SECRET_KEY_JWT, ALGORITHM
+
 
 http_bearer = HTTPBearer()
 
@@ -29,20 +30,20 @@ async def descript_and_check_token(token: str) -> UserOrm:
     try:
         payload = jwt.decode(token, SECRET_KEY_JWT, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
-        raise HTTTPError.BAD_CREDENTIALS_403
+        raise HTTPError.BAD_CREDENTIALS_403
     except JWTError:
-        raise HTTTPError.INVALID_TOKEN_401
+        raise HTTPError.INVALID_TOKEN_401
 
     user_email = payload.get('sub')
     if not user_email:
-        raise HTTTPError.INVALID_TOKEN_401
+        raise HTTPError.INVALID_TOKEN_401
 
     user = await UserRepository.find_one_or_none_by_email(user_email)
     if not user:
-        raise HTTTPError.DATA_OUT_OF_DATE_403
+        raise HTTPError.DATA_OUT_OF_DATE_403
 
     if not user.is_active:
-        raise HTTTPError.USER_NOT_ACTIVE_403
+        raise HTTPError.USER_NOT_ACTIVE_403
 
     return user
 

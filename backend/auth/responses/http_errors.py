@@ -38,7 +38,7 @@ class UserErrorCode:
     REFRESH_TOKEN_IN_BLACK_LIST = "REFRESH_TOKEN_IN_BLACK_LIST"
 
 
-class HTTTPError:
+class HTTPError:
     """Аll authentication and authorization errors.
 
     Attributes:

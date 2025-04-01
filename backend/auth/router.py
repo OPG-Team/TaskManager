@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Response, Request, Depends, HTTPException
 from .utils import get_password_hash, create_access_token, create_refresh_token
 from .dependencies import refresh_access_token, get_current_user
 from .models import User, Token, UserInfo
-from .responses.http_errors import HTTTPError
+from .responses.http_errors import HTTPError
 from .responses.responses import UsersResponse, base_auth_responses
 from .service import UserRepository
 
@@ -36,7 +36,7 @@ async def register_user(user: User):
 async def login_user(response: Response, user: User):
     check = await UserRepository.authenticate_user(email=user.email, password=user.password)
     if check is None:
-        raise HTTTPError.BAD_CREDENTIALS_400
+        raise HTTPError.BAD_CREDENTIALS_400
 
     access_token = create_access_token(data={"sub": str(check.email), "role": str(check.role)})
     create_refresh_token(response=response, data={"sub": str(check.email), "role": str(check.role)})
@@ -56,11 +56,11 @@ async def login_user(response: Response, user: User):
 async def refresh_token_point(request: Request):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        raise HTTTPError.BAD_CREDENTIALS_401
+        raise HTTPError.BAD_CREDENTIALS_401
 
     email = await request.app.redis.get_refresh_token_email(refresh_token)
     if email:
-        raise HTTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401
+        raise HTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401
 
     access_token = await refresh_access_token(refresh_token=refresh_token)
     return Token(access_token=access_token, token_type="Bearer")
