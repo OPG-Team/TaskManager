@@ -30,7 +30,7 @@ async def get_all_tasks(user: UserInfo = Depends(get_current_user)):
 @router.post(
     path="/",
     summary="Add new task",
-    description="Add new task",
+    description="Creates task with current user as owner. Requires authentication. Returns 201 on success.",
     response_description="Empty response (status 201)",
     status_code=status.HTTP_201_CREATED,
     response_model=None,
