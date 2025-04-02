@@ -1,6 +1,6 @@
 import redis
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from auth.router import router as router_auth
 from config import FRONTEND_URL, REDIS_URL
@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     except (redis.ConnectionError, redis.TimeoutError) as e:
         app_logger.error(f"Redis connection failed: {str(e)}")
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Redis connection failed: {str(e)}"
         )
     finally:

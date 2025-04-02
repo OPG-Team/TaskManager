@@ -12,11 +12,12 @@ router = APIRouter(tags=["Users 👔"])
 
 @router.post(
     path="/register",
-    summary="UserCreate registration",
-    description="UserCreate registration",
-    response_description="HTTP 201 STATUS",
-    responses=UsersResponse.register_post,
+    summary="Register new user",
+    description="Creates new user account. Hashes password automatically. Email must be unique.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_201_CREATED,
+    response_model=None,
+    responses=UsersResponse.register_post,
 )
 async def register_user(user: User):
     user.password = get_password_hash(user.password)
@@ -26,12 +27,12 @@ async def register_user(user: User):
 
 @router.post(
     path="/login",
-    summary="Login for user",
-    description="Authorization in the application",
+    summary="User login",
+    description="Authenticates user and returns JWT tokens. Sets refresh token as HTTP-only cookie.",
     response_description="Access token (Bearer) and refresh token (Cookie)",
     status_code=status.HTTP_200_OK,
-    responses=UsersResponse.login_post,
     response_model=Token,
+    responses=UsersResponse.login_post,
 )
 async def login_user(response: Response, user: User):
     check = await UserRepository.authenticate_user(email=user.email, password=user.password)
@@ -47,7 +48,7 @@ async def login_user(response: Response, user: User):
 @router.post(
     path="/refresh_token",
     summary="Refresh access token",
-    description="Refresh access token",
+    description="Generates new access token using valid refresh token. Does not extend refresh token lifespan.",
     response_description="Bearer Token (Access)",
     status_code=status.HTTP_200_OK,
     response_model=Token,
@@ -69,9 +70,10 @@ async def refresh_token_point(request: Request):
 @router.post(
     path="/logout",
     summary="Logout, add refresh_token to black list",
-    description="Logout, add refresh_token to black list",
-    response_description="Status code",
+    description="Invalidates refresh token by adding it to blacklist. Requires valid access token.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=base_auth_responses,
 )
 async def logout(request: Request, user_data: UserInfo = Depends(get_current_user)):
@@ -84,7 +86,7 @@ async def logout(request: Request, user_data: UserInfo = Depends(get_current_use
 @router.get(
     path="/me",
     summary="Information about you",
-    description="Information about you",
+    description="Returns authenticated user's profile data. Requires valid access token.",
     response_description="User info",
     status_code=status.HTTP_200_OK,
     response_model=UserInfo,

@@ -15,8 +15,8 @@ router = APIRouter(prefix="/tasks", tags=["Tasks 💡"])
 
 @router.get(
     path="/",
-    summary="Get all tasks",
-    description="Get all tasks",
+    summary="Get all tasks for current user",
+    description="Returns all tasks where current user is owner or participant. Includes task details and user connections. Accessible only to authenticated users.",
     response_description="A list of all tasks in the database",
     status_code=status.HTTP_200_OK,
     response_model=List[TaskWithUsers],
@@ -31,8 +31,9 @@ async def get_all_tasks(user: UserInfo = Depends(get_current_user)):
     path="/",
     summary="Add new task",
     description="Add new task",
-    response_description="The task object from the database",
+    response_description="Empty response (status 201)",
     status_code=status.HTTP_201_CREATED,
+    response_model=None,
     responses=TaskResponses.create_new_task,
 )
 async def create_new_task(task: TaskCreate, user: UserInfo = Depends(get_current_user)):
@@ -43,9 +44,10 @@ async def create_new_task(task: TaskCreate, user: UserInfo = Depends(get_current
 @router.put(
     path="/{task_id}",
     summary="Update a specific task",
-    description="Update a specific task",
-    response_description="Updated info for task",
+    description="Modifies task details. Available for owners/co-creators. Validates input data.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=TaskResponses.update_task,
 )
 async def update_task(task_id: int, task: TaskCreate, user: UserInfo = Depends(get_current_user)):
@@ -60,9 +62,10 @@ async def update_task(task_id: int, task: TaskCreate, user: UserInfo = Depends(g
 @router.delete(
     path="/{task_id}",
     summary="Delete a specific task",
-    description="Delete a specific task",
-    response_description="Status code",
+    description="Permanently removes task. Owner only. Deletes all connections.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=TaskResponses.delete_task,
 )
 async def delete_task(task_id: int, user: UserInfo = Depends(get_current_user)):
@@ -76,9 +79,10 @@ async def delete_task(task_id: int, user: UserInfo = Depends(get_current_user)):
 @router.post(
     path="/add_user/{task_id}",
     summary="Add user on the your task",
-    description="Add user on the your task",
-    response_description="TaskWithUsers",
+    description="Adds user with specified role (owner/co-creator/default). Owner/admin only.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=TaskResponses.add_new_user_on_task,
 )
 async def add_user_on_task(task_id: int, new_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
@@ -94,9 +98,10 @@ async def add_user_on_task(task_id: int, new_user: str, type_connection: Connect
 @router.put(
     path="/update_connection_type/{task_id}",
     summary="Update connection type",
-    description="Update connection type",
-    response_description="TaskWithUsers",
+    description="Updates user's connection type. Owner can't demote themselves.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=TaskResponses.update_connection_type,
 )
 async def update_connection_type_for_user(task_id: int, email_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
@@ -112,9 +117,10 @@ async def update_connection_type_for_user(task_id: int, email_user: str, type_co
 @router.delete(
     path="/delete_connection/{task_id}",
     summary="Delete connection",
-    description="Delete connection",
-    response_description="TaskWithUsers",
+    description="Deletes user-task connection. Owner can't remove themselves.",
+    response_description="Empty response (status 200)",
     status_code=status.HTTP_200_OK,
+    response_model=None,
     responses=TaskResponses.delete_connection_user,
 )
 async def delete_connection_user(task_id: int, email_user: str, user: UserInfo = Depends(get_current_user)):

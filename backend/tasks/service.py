@@ -1,9 +1,9 @@
 import datetime
 import locale
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from auth.database import UserOrm, ConnectionOrm, ConnectionType, UserRole
 from auth.models import UserInfo, ConnectionWithUser
 from database import new_session
@@ -25,15 +25,24 @@ for loc in ['ru_RU.UTF-8', 'ru_RU.utf8', 'Russian', '']:
 
 class TaskRepository:
     @classmethod
-    async def get_connect_by_task_id_and_email(cls, email_user: str, task_id: int, session: AsyncSession):
+    async def get_connect_by_task_id_and_email(cls, email_user: str, task_id: int, session: AsyncSession) -> Optional[ConnectionOrm]:
+        """Retrieves a connection between task and user from the database.
+
+        Args:
+            email_user: Email of the user to find connection for.
+            task_id: ID of the task to find connection for.
+            session: AsyncSession for database operations.
+
+        Returns:
+            A Optional[ConnectionOrm], the found connection object or None if not exists.
+        """
         connection = await session.execute(
             select(ConnectionOrm).where(
                 ConnectionOrm.id_task == task_id,
                 ConnectionOrm.email == email_user
             )
         )
-        connection = connection.scalars().first()
-        return connection
+        return connection.scalars().first()
 
     @classmethod
     async def get_all_tasks_and_users(cls, user: UserInfo) -> List[TaskWithUsers]:
@@ -47,8 +56,8 @@ class TaskRepository:
             query = (
                 select(TaskOrm)
                 .join(ConnectionOrm, ConnectionOrm.id_task == TaskOrm.id)
-                .where(ConnectionOrm.email == user.email)  # Фильтр по email пользователя
-                .options(joinedload(TaskOrm.users))  # Загружаем связанных пользователей
+                .where(ConnectionOrm.email == user.email)
+                .options(selectinload(TaskOrm.users))  # Загружаем связанных пользователей
             )
             result = await session.execute(query)
             task_models = result.unique().scalars().all()
@@ -75,14 +84,8 @@ class TaskRepository:
                         )
 
                 # Создаём Pydantic-модель для задачи
-                task_dict = {
-                    "id": task.id,
-                    "title": task.title,
-                    "status": task.status,
-                    "description": task.description,
-                    "time": task.time,
-                    "connections": connection_list
-                }
+                task_dict = task.__dict__.copy()
+                task_dict["connections"] = connection_list
                 tasks_with_connections.append(TaskWithUsers.model_validate(task_dict))
 
             return tasks_with_connections
@@ -204,7 +207,6 @@ class TaskRepository:
             HTTTPError_task.USER_ALREADY_ASSOCIATED_400: User is already associated with this task.
         """
         async with new_session() as session:
-            # Получаем задачу
             task = await session.get(TaskOrm, task_id)
             if not task:
                 raise HTTPError_task.TASK_NOT_FOUNT_404
@@ -291,7 +293,6 @@ class TaskRepository:
             HTTTPError_task.CONNECTION_NOT_FOUND_404: No connection found.
         """
         async with new_session() as session:
-            # Получаем задачу
             task = await session.get(TaskOrm, task_id)
             if not task:
                 raise HTTPError_task.TASK_NOT_FOUNT_404
