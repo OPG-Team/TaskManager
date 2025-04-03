@@ -5,16 +5,16 @@ from .utils import convert_to_example
 
 base_auth_responses = {
     status.HTTP_401_UNAUTHORIZED: convert_to_example([
-        HTTPError.BAD_CREDENTIALS_401,
-        HTTPError.INVALID_TOKEN_401,
+        HTTPError.bad_credentials_401(),
+        HTTPError.invalid_token_401(),
     ]),
     status.HTTP_403_FORBIDDEN: convert_to_example([
-        HTTPError.BAD_CREDENTIALS_403,
-        HTTPError.USER_NOT_ACTIVE_403,
-        HTTPError.DATA_OUT_OF_DATE_403,
+        HTTPError.bad_credentials_403(),
+        HTTPError.user_not_active_403(),
+        HTTPError.data_out_of_date_403(),
     ]),
     status.HTTP_500_INTERNAL_SERVER_ERROR: convert_to_example([
-        HTTPError.ENDPOINT_NOT_FOUND_500,
+        HTTPError.endpoint_not_found_500(),
     ]),
 }
 """Base authorization responses."""
@@ -30,25 +30,25 @@ class UsersResponse:
     """
     register_post = {
         status.HTTP_409_CONFLICT: convert_to_example([
-            HTTPError.EMAIL_ALREADY_EXISTS_409,
+            HTTPError.email_already_exists_409(),
         ]),
     }
 
     login_post = {
         status.HTTP_400_BAD_REQUEST: convert_to_example([
-            HTTPError.BAD_CREDENTIALS_400,
+            HTTPError.bad_credentials_400(),
         ]),
     }
 
     refresh_post = {
         status.HTTP_401_UNAUTHORIZED: convert_to_example([
-            HTTPError.BAD_CREDENTIALS_401,
-            HTTPError.INVALID_TOKEN_401,
-            HTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401,
+            HTTPError.bad_credentials_401(),
+            HTTPError.invalid_token_401(),
+            HTTPError.refresh_token_in_black_list_401(),
         ]),
         status.HTTP_403_FORBIDDEN: convert_to_example([
-            HTTPError.BAD_CREDENTIALS_403,
-            HTTPError.DATA_OUT_OF_DATE_403,
-            HTTPError.USER_NOT_ACTIVE_403,
+            HTTPError.bad_credentials_403(),
+            HTTPError.data_out_of_date_403(),
+            HTTPError.user_not_active_403(),
         ])
     }

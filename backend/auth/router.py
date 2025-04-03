@@ -1,4 +1,5 @@
 from fastapi import APIRouter, status, Response, Request, Depends
+from utils import handle_catch_error
 from .utils import get_password_hash, create_access_token, create_refresh_token
 from .dependencies import refresh_access_token, get_current_user
 from .models import User, Token, UserInfo
@@ -19,6 +20,7 @@ router = APIRouter(tags=["Users 👔"])
     response_model=None,
     responses=UsersResponse.register_post,
 )
+@handle_catch_error
 async def register_user(user: User):
     user.password = get_password_hash(user.password)
     await UserRepository.add_user(user)
@@ -34,10 +36,11 @@ async def register_user(user: User):
     response_model=Token,
     responses=UsersResponse.login_post,
 )
+@handle_catch_error
 async def login_user(response: Response, user: User):
     check = await UserRepository.authenticate_user(email=user.email, password=user.password)
     if check is None:
-        raise HTTPError.BAD_CREDENTIALS_400
+        raise HTTPError.bad_credentials_400()
 
     access_token = create_access_token(data={"sub": str(check.email), "role": str(check.role)})
     create_refresh_token(response=response, data={"sub": str(check.email), "role": str(check.role)})
@@ -54,14 +57,15 @@ async def login_user(response: Response, user: User):
     response_model=Token,
     responses=UsersResponse.refresh_post,
 )
+@handle_catch_error
 async def refresh_token_point(request: Request):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        raise HTTPError.BAD_CREDENTIALS_401
+        raise HTTPError.bad_credentials_401()
 
     email = await request.app.redis.get_refresh_token_email(refresh_token)
     if email:
-        raise HTTPError.REFRESH_TOKEN_IN_BLACK_LIST_401
+        raise HTTPError.refresh_token_in_black_list_401()
 
     access_token = await refresh_access_token(refresh_token=refresh_token)
     return Token(access_token=access_token, token_type="Bearer")
@@ -76,6 +80,7 @@ async def refresh_token_point(request: Request):
     response_model=None,
     responses=base_auth_responses,
 )
+@handle_catch_error
 async def logout(request: Request, user_data: UserInfo = Depends(get_current_user)):
     refresh_token = request.cookies.get("refresh_token")
     if refresh_token:
@@ -92,5 +97,6 @@ async def logout(request: Request, user_data: UserInfo = Depends(get_current_use
     response_model=UserInfo,
     responses=base_auth_responses,
 )
+@handle_catch_error
 async def get_me(user_data: UserInfo = Depends(get_current_user)):
     return user_data

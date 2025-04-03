@@ -36,7 +36,7 @@ class UserRepository:
                 return user.email
             except IntegrityError:
                 await session.rollback()
-                raise HTTPError.EMAIL_ALREADY_EXISTS_409
+                raise HTTPError.email_already_exists_409()
 
     @classmethod
     async def authenticate_user(cls, email: EmailStr, password: str) -> Optional[UserOrm]:

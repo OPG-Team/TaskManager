@@ -10,7 +10,7 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_auth.USER_NOT_FOUNT_404,
+                HTTTPError_auth.user_not_found_404(),
             ]),
         }
     )
@@ -19,10 +19,10 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_task.TASK_NOT_FOUNT_404,
+                HTTTPError_task.task_not_found_404(),
             ]),
             status.HTTP_403_FORBIDDEN: convert_to_example([
-                HTTTPError_auth.NO_ACCESS_RIGHTS_403,
+                HTTTPError_auth.no_access_rights_403(),
             ]),
         }
     )
@@ -31,10 +31,10 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_task.TASK_NOT_FOUNT_404,
+                HTTTPError_task.task_not_found_404(),
             ]),
             status.HTTP_403_FORBIDDEN: convert_to_example([
-                HTTTPError_auth.NO_ACCESS_RIGHTS_403,
+                HTTTPError_auth.no_access_rights_403(),
             ]),
         }
     )
@@ -43,14 +43,14 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_400_BAD_REQUEST: convert_to_example([
-                HTTTPError_task.USER_ALREADY_ASSOCIATED_400,
+                HTTTPError_task.user_already_associated_400(),
             ]),
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_task.TASK_NOT_FOUNT_404,
-                HTTTPError_auth.USER_NOT_FOUNT_404,
+                HTTTPError_task.task_not_found_404(),
+                HTTTPError_auth.user_not_found_404(),
             ]),
             status.HTTP_403_FORBIDDEN: convert_to_example([
-                HTTTPError_auth.NO_ACCESS_RIGHTS_403,
+                HTTTPError_auth.no_access_rights_403(),
             ]),
         }
     )
@@ -59,14 +59,14 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_400_BAD_REQUEST: convert_to_example([
-                HTTTPError_task.OWNER_CANNOT_CHANGE_OWN_CONNECTION_TYPE_400,
+                HTTTPError_task.owner_cannot_change_own_connection_type_400(),
             ]),
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_task.TASK_NOT_FOUNT_404,
-                HTTTPError_task.CONNECTION_NOT_FOUND_404,
+                HTTTPError_task.task_not_found_404(),
+                HTTTPError_task.connection_not_found_404(),
             ]),
             status.HTTP_403_FORBIDDEN: convert_to_example([
-                HTTTPError_auth.NO_ACCESS_RIGHTS_403,
+                HTTTPError_auth.no_access_rights_403(),
             ]),
         }
     )
@@ -75,14 +75,14 @@ class TaskResponses:
         base_auth_responses,
         {
             status.HTTP_400_BAD_REQUEST: convert_to_example([
-                HTTTPError_task.OWNER_CANNOT_DELETE_OWN_CONNECTION_400,
+                HTTTPError_task.owner_cannot_delete_own_connection_400(),
             ]),
             status.HTTP_404_NOT_FOUND: convert_to_example([
-                HTTTPError_task.TASK_NOT_FOUNT_404,
-                HTTTPError_task.CONNECTION_NOT_FOUND_404,
+                HTTTPError_task.task_not_found_404(),
+                HTTTPError_task.connection_not_found_404(),
             ]),
             status.HTTP_403_FORBIDDEN: convert_to_example([
-                HTTTPError_auth.NO_ACCESS_RIGHTS_403,
+                HTTTPError_auth.no_access_rights_403(),
             ]),
         }
     )

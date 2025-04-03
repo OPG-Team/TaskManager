@@ -8,6 +8,7 @@ from auth.responses.responses import base_auth_responses
 from tasks.models import TaskWithUsers, TaskCreate
 from tasks.responses.responses import TaskResponses
 from tasks.service import TaskRepository
+from utils import handle_catch_error
 
 
 router = APIRouter(prefix="/tasks", tags=["Tasks 💡"])
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/tasks", tags=["Tasks 💡"])
     response_model=List[TaskWithUsers],
     responses=base_auth_responses,
 )
+@handle_catch_error
 async def get_all_tasks(user: UserInfo = Depends(get_current_user)):
     tasks = await TaskRepository.get_all_tasks_and_users(user)
     return [TaskWithUsers.model_validate(row) for row in tasks]
@@ -36,6 +38,7 @@ async def get_all_tasks(user: UserInfo = Depends(get_current_user)):
     response_model=None,
     responses=TaskResponses.create_new_task,
 )
+@handle_catch_error
 async def create_new_task(task: TaskCreate, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.create_new_task(task_data=task, user_email=str(user.email))
     return Response(status_code=status.HTTP_201_CREATED)
@@ -50,6 +53,7 @@ async def create_new_task(task: TaskCreate, user: UserInfo = Depends(get_current
     response_model=None,
     responses=TaskResponses.update_task,
 )
+@handle_catch_error
 async def update_task(task_id: int, task: TaskCreate, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.update_task(
         task_id=task_id,
@@ -68,6 +72,7 @@ async def update_task(task_id: int, task: TaskCreate, user: UserInfo = Depends(g
     response_model=None,
     responses=TaskResponses.delete_task,
 )
+@handle_catch_error
 async def delete_task(task_id: int, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.delete_task(
         task_id=task_id,
@@ -85,6 +90,7 @@ async def delete_task(task_id: int, user: UserInfo = Depends(get_current_user)):
     response_model=None,
     responses=TaskResponses.add_new_user_on_task,
 )
+@handle_catch_error
 async def add_user_on_task(task_id: int, new_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.add_user_on_task(
         task_id=task_id,
@@ -104,6 +110,7 @@ async def add_user_on_task(task_id: int, new_user: str, type_connection: Connect
     response_model=None,
     responses=TaskResponses.update_connection_type,
 )
+@handle_catch_error
 async def update_connection_type_for_user(task_id: int, email_user: str, type_connection: ConnectionType, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.update_connection_type(
         task_id=task_id,
@@ -123,6 +130,7 @@ async def update_connection_type_for_user(task_id: int, email_user: str, type_co
     response_model=None,
     responses=TaskResponses.delete_connection_user,
 )
+@handle_catch_error
 async def delete_connection_user(task_id: int, email_user: str, user: UserInfo = Depends(get_current_user)):
     await TaskRepository.delete_connection_user(
         task_id=task_id,
