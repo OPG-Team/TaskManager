@@ -68,6 +68,9 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: Frontend
+    environment:
+      - BACKEND_URL=${BACKEND_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
     volumes:
       - ./frontend:/app
     ports:
