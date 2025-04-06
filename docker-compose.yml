@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - 5432:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
@@ -22,6 +24,8 @@ services:
     image: redis:7.4.2
     container_name: Redis
     restart: always
+    ports:
+      - 6379:6379
     volumes:
       - redis_data:/data
     networks:
@@ -45,17 +49,15 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=${REDIS_URL}
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
-      - FRONTEND_URL=http://127.0.0.1:8085
+      - FRONTEND_URL=${FRONTEND_URL}
     volumes:
       - ./backend:/app
     restart: unless-stopped
-    entrypoint: >
-      sh -c "pip install --no-cache-dir alembic asyncpg python-dotenv && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8005"
     networks:
       - app_network
     ports:

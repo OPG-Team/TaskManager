@@ -13,4 +13,4 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 30))
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://127.0.0.1:8080")
+FRONTEND_URL_ARRAY = os.getenv("FRONTEND_URL", "http://127.0.0.1:8085,http://localhost:8085").split(",")

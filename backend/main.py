@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from auth.router import router as router_auth
-from config import FRONTEND_URL, REDIS_URL
+from config import FRONTEND_URL_ARRAY, REDIS_URL
 from logger import app_logger
 from redis_tool import RedisDB
 from tasks.router import router as router_tasks
@@ -35,7 +35,7 @@ app.include_router(router_tasks)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=FRONTEND_URL_ARRAY,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
