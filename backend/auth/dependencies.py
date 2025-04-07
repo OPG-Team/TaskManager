@@ -22,28 +22,28 @@ async def descript_and_check_token(token: str) -> UserOrm:
         A UsersOrm, the user object corresponding to the validated token.
 
     Raises:
-        HTTTPError.BAD_CREDENTIALS_403: If the token has expired.
-        HTTTPError.INVALID_TOKEN_401: If the token is invalid or does not contain a user ID.
-        HTTTPError.DATA_OUT_OF_DATE_403: If the user corresponding to the token does not exist.
-        HTTTPError.USER_NOT_ACTIVE_403: If the user corresponding to the token is not active.
+        HTTTPError.bad_credentials_403(): If the token has expired.
+        HTTTPError.invalid_token_401(): If the token is invalid or does not contain a user ID.
+        HTTTPError.data_out_of_date_403(): If the user corresponding to the token does not exist.
+        HTTTPError.user_not_active_403(): If the user corresponding to the token is not active.
     """
     try:
         payload = jwt.decode(token, SECRET_KEY_JWT, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
-        raise HTTPError.BAD_CREDENTIALS_403
+        raise HTTPError.bad_credentials_403()
     except JWTError:
-        raise HTTPError.INVALID_TOKEN_401
+        raise HTTPError.invalid_token_401()
 
     user_email = payload.get('sub')
     if not user_email:
-        raise HTTPError.INVALID_TOKEN_401
+        raise HTTPError.invalid_token_401()
 
     user = await UserRepository.find_one_or_none_by_email(user_email)
     if not user:
-        raise HTTPError.DATA_OUT_OF_DATE_403
+        raise HTTPError.data_out_of_date_403()
 
     if not user.is_active:
-        raise HTTPError.USER_NOT_ACTIVE_403
+        raise HTTPError.user_not_active_403()
 
     return user
 

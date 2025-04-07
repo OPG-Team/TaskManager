@@ -102,7 +102,7 @@ class TaskRepository:
             None
 
         Raises:
-            HTTTPError_auth.USER_NOT_FOUNT_404: User not found in the database.
+            HTTTPError_auth.user_not_found_404(): User not found in the database.
         """
         async with new_session() as session:
             new_task = TaskOrm(
@@ -140,8 +140,8 @@ class TaskRepository:
             The updated TaskOrm object.
 
         Raises:
-            HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights.
-            HTTTPError_task.TASK_NOT_FOUNT_404: Task not found on database.
+            HTTTPError_auth.no_access_rights_403(): No required access rights.
+            HTTTPError_task.task_not_found_404(): Task not found on database.
         """
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
@@ -171,8 +171,8 @@ class TaskRepository:
             None
 
         Raises:
-            HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights.
-            HTTTPError_task.TASK_NOT_FOUNT_404: Task not found on database.
+            HTTTPError_auth.no_access_rights_403(): No required access rights.
+            HTTTPError_task.task_not_found_404(): Task not found on database.
         """
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
@@ -201,10 +201,10 @@ class TaskRepository:
             None
 
         Raises:
-            HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights (if DEFAULT user is not OWNER).
-            HTTTPError_task.TASK_NOT_FOUNT_404: Task not found in the database.
-            HTTTPError_auth.USER_NOT_FOUNT_404: User to add not found in the database.
-            HTTTPError_task.USER_ALREADY_ASSOCIATED_400: User is already associated with this task.
+            HTTTPError_auth.no_access_rights_403(): No required access rights (if DEFAULT user is not OWNER).
+            HTTTPError_task.task_not_found_404(): Task not found in the database.
+            HTTTPError_auth.user_not_found_404(): User to add not found in the database.
+            HTTTPError_task.user_already_associated_400(): User is already associated with this task.
         """
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
@@ -246,10 +246,10 @@ class TaskRepository:
             None
 
         Raises:
-            HTTTPError_task.OWNER_CANNOT_CHANGE_OWN_CONNECTION_TYPE_400: The OWNER cannot change their own connection type.
-            HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights.
-            HTTTPError_task.TASK_NOT_FOUNT_404: Task not found on database.
-            HTTTPError_task.CONNECTION_NOT_FOUND_404: No connection found.
+            HTTTPError_task.owner_cannot_change_own_connection_type_400(): The OWNER cannot change their own connection type.
+            HTTTPError_auth.no_access_rights_403(): No required access rights.
+            HTTTPError_task.task_not_found_404(): Task not found on database.
+            HTTTPError_task.connection_not_found_404(): No connection found.
         """
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
@@ -287,10 +287,10 @@ class TaskRepository:
             None
 
         Raises:
-            HTTTPError_task.OWNER_CANNOT_DELETE_OWN_CONNECTION_400: The OWNER cannot delete their own connection.
-            HTTTPError_auth.NO_ACCESS_RIGHTS_403: No required access rights.
-            HTTTPError_task.TASK_NOT_FOUNT_404: Task not found on database.
-            HTTTPError_task.CONNECTION_NOT_FOUND_404: No connection found.
+            HTTTPError_task.owner_cannot_delete_own_connection_400(): The OWNER cannot delete their own connection.
+            HTTTPError_auth.no_access_rights_403(): No required access rights.
+            HTTTPError_task.task_not_found_404(): Task not found on database.
+            HTTTPError_task.connection_not_found_404(): No connection found.
         """
         async with new_session() as session:
             task = await session.get(TaskOrm, task_id)
