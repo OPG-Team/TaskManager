@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:14.17-alpine3.21
     container_name: PostgresDB
     restart: always
     environment:
@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
     ports:
-      - 5432:5432
+      - 5572:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
@@ -21,13 +21,42 @@ services:
       start_period: 5s
 
   redis:
-    image: redis:7.4.2
+    image: redis:6-alpine
     container_name: Redis
     restart: always
-    ports:
-      - 6379:6379
     volumes:
-      - redis_data:/data
+      - .\redis\etc\redis.conf:/usr/local/etc/redis/redis.conf
+      - .\redis\data:/data
+    command: >
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "" > /usr/local/etc/redis/redis.conf &&
+        echo "" > /usr/local/etc/redis/users.acl &&
+
+        echo "bind 0.0.0.0" >> /usr/local/etc/redis/redis.conf &&
+        echo "protected-mode no" >> /usr/local/etc/redis/redis.conf &&
+        echo "requirepass $REDIS_PASSWORD" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendfsync everysec" >> /usr/local/etc/redis/redis.conf &&
+        echo " loglevel notice" >> /usr/local/etc/redis/redis.conf &&
+        echo "logfile /data/log/redis-server.log" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendfilename "appendonly.aof"" >> /usr/local/etc/redis/redis.conf &&
+        echo "auto-aof-rewrite-percentage 100" >> /usr/local/etc/redis/redis.conf &&
+        echo "auto-aof-rewrite-min-size 64mb" >> /usr/local/etc/redis/redis.conf &&
+        echo "maxmemory 256mb" >> /usr/local/etc/redis/redis.conf
+        echo "maxmemory-policy allkeys-lru" >> /usr/local/etc/redis/redis.conf
+
+        echo "user $BackEnd_USER on >$BackEnd_USER_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
+        echo "user $Exporter_USER on >$Exporter_USER_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
+        redis-server /usr/local/etc/redis/redis.conf --aclfile /usr/local/etc/redis/users.acl
+      '
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      BackEnd_USER: ${BackEnd_USER}
+      BackEnd_USER_PASSWORD: ${BackEnd_USER_PASSWORD}
+      Exporter_USER: ${Exporter_USER}
+      Exporter_USER_PASSWORD: ${Exporter_USER_PASSWORD}
     networks:
       - app_network
     healthcheck:
@@ -36,6 +65,32 @@ services:
       timeout: 10s
       retries: 10
       start_period: 5s
+
+  redis-exporter:
+    image: oliver006/redis_exporter
+    container_name: redis-exporter
+    environment:
+      REDIS_ADDR: redis:6379
+      REDIS_USER: ${Exporter_USER}
+      REDIS_PASSWORD: ${Exporter_USER_PASSWORD}
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - app_network
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    networks:
+      - app_network
 
   backend:
     build:
@@ -49,7 +104,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://${BackEnd_USER}:${BackEnd_USER_PASSWORD}@Redis:6379 
       - SECRET_KEY_JWT=${SECRET_KEY_JWT}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -65,16 +120,47 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: Frontend
+    depends_on:
+      - backend
     environment:
       - BACKEND_URL=${BACKEND_URL}
       - SESSION_SECRET=${SESSION_SECRET}
-    volumes:
-      - ./frontend:/app
     ports:
       - "8085:8085"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      #- ./prometheus/alerts.yml:/etc/prometheus/alerts.yml  # Добавляем файл с алертами
+      #- ./prometheus/postgres_alerts.yml:/etc/prometheus/postgres_alerts.yml
+      #- ./prometheus/docker_alerts.yml:/etc/prometheus/docker_alerts.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "7090:9090"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    
     restart: unless-stopped
     networks:
       - app_network
@@ -86,3 +172,5 @@ networks:
 volumes:
   pg_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
