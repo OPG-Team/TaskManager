@@ -2,6 +2,7 @@ import redis
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from auth.router import router as router_auth
 from config import FRONTEND_URL_ARRAY, REDIS_URL
 from logger import app_logger
@@ -40,3 +41,5 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Instrumentator().instrument(app).expose(app)

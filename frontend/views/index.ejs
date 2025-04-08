@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/components/task-form.css">
+    <link rel="stylesheet" href="/css/components/task-list.css">
+    <link rel="stylesheet" href="/css/components/filters.css">
+    <link rel="stylesheet" href="/css/components/task-list-settings.css">
+    <link rel="stylesheet" href="/css/components/form-add-connection-user.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Task Manager</h1>
+            <button id="logoutButton" class="logout-btn">Logout</button>
+        </header>
+
+        <main>
+            <div class="task-form">
+                <h2>Create a New Task</h2>
+                <form id="taskForm">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required>
+    
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="Новая">Новая</option>
+                        <option value="В работе">В работе</option>
+                        <option value="Завершена">Завершена</option>
+                    </select>
+    
+                    <label for="description">Description:</label>
+                    <textarea id="description" name="description" required></textarea>
+    
+                    <button type="submit">Create Task</button>
+                </form>
+            </div>
+
+            <div id="filters">
+                <h3>Фильтры</h3>
+                <label for="filterStatus">Статус:</label>
+                <select id="filterStatus">
+                    <option value="">Все</option>
+                    <option value="Новая">Новая</option>
+                    <option value="В работе">В работе</option>
+                    <option value="Завершена">Завершена</option>
+                </select>
+                <label for="filterTimeAfter">Дата создания (после):</label>
+                <input type="date" id="filterTimeAfter" value="2025-03-01">
+                <button id="applyFilters">Применить фильтры</button>
+                <button id="clearFilters">Сбросить фильтры</button>
+            </div>
+    
+            <div class="task-list">
+                <h2>Tasks</h2>
+                <ul id="tasks">
+                    <% tasks.forEach(task => { %>
+                        <li class="task-item" data-id="<%= task.id %>">
+                            <div class="task-view">
+                                <h3 class="task-title"><%= task.title %></h3>
+                                <p class="task-status">Status: <span><%= task.status %></span></p>
+                                <p class="task-description">Description: <span><%= task.description %></span></p>
+                                <p>Created: <%= new Date(task.time) %></p>
+                            </div>
+                        
+                            <div class="task-edit" style="display: none;">
+                                <input type="text" class="edit-title" value="<%= task.title %>">
+                                <select class="edit-status">
+                                    <option value="Новая" <%= task.status === 'Новая' ? 'selected' : '' %>>Новая</option>
+                                    <option value="В работе" <%= task.status === 'В работе' ? 'selected' : '' %>>В работе</option>
+                                    <option value="Завершена" <%= task.status === 'Завершена' ? 'selected' : '' %>>Завершена</option>
+                                </select>
+                                <textarea class="edit-description"><%= task.description %></textarea>
+                                <button class="save-task" data-task-id="<%= task.id %>">Сохранить</button>
+                                <button class="cancel-edit">Отмена</button>
+                            </div>
+
+                            <div class="task-participants">
+                                <h4>Участники:</h4>
+                                <ul>
+                                    <% task.connections.forEach(connection => { %>
+                                        <li>
+                                            <%= connection.user.email %> (<%= connection.type %>)
+                                            <% if (connection.type !== 'Владелец' && emailCurrentUser !== connection.user.email) { %>
+                                                <button class="remove-participant" 
+                                                        data-task-id="<%= task.id %>"
+                                                        data-user-email="<%= connection.user.email %>">
+                                                    Удалить
+                                                </button>
+                                            <% } %>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                                
+                                <% if (task.connections.some(connection => connection.user.email === emailCurrentUser)) { %>
+                                    <% const userConnection = task.connections.find(connection => connection.user.email === emailCurrentUser); %>
+                                    <% if (userConnection.type === 'Владелец' || userConnection.type === 'Соавтор') { %>
+                                        <button class="edit-task" data-task-id="<%= task.id %>">Редактировать</button>
+                                    <% } %>
+                                    <% if (userConnection.type === 'Владелец') { %>
+                                        <button class="delete-task" data-task-id="<%= task.id %>">Удалить задачу</button>
+                                        <button class="add-participant" data-task-id="<%= task.id %>">Добавить участника</button>
+
+                                        <div class="participant-form" style="display: none;">
+                                            <input type="email" class="participant-email" placeholder="Введите email участника" required>
+                                            <select class="participant-type" required>
+                                                <option value="Обычный">Обычный</option>
+                                                <option value="Соавтор">Соавтор</option>
+                                                <option value="Владелец">Владелец</option>
+                                            </select>
+                                            <button class="save-participant" data-task-id="<%= task.id %>">Сохранить</button>
+                                            <button class="cancel-add-participant">Отмена</button>
+                                        </div>
+                                    <% } %>
+                                <% } %>
+                            </div>
+                        </li>
+                    <% }); %>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/js/deleteConnectionUser.js"></script>
+    <script type="module" src="/js/createTask.js"></script>
+    <script type="module" src="/js/settingTask.js"></script>
+    <script type="module" src="/js/deleteTask.js"></script>
+    <script type="module" src="/js/addConnectionUser.js"></script>
+    <script type="module" src="/js/logout.js"></script>
+    <script type="module" src="/js/filter.js"></script>
+</body>
+</html>

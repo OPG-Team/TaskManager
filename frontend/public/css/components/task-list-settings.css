@@ -1,0 +1,112 @@
+.participant-type {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+.participant-type:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.edit-title, .edit-description {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.edit-status {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.save-task, .cancel-edit {
+    background-color: #1f9e25;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    font-size: 16px;
+}
+
+.save-task:hover, .cancel-edit:hover {
+    background-color: #195f1d;
+}
+
+.cancel-edit {
+    background-color: #dc3545;
+}
+
+.cancel-edit:hover {
+    background-color: #c82333;
+}
+
+.task-edit {
+    display: none;
+    margin-top: 10px;
+}
+
+.task-view {
+    display: block;
+}
+
+.edit-task {
+    background-color: #007bff;
+    color: #fff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.edit-task:hover {
+    background-color: #0056b3;
+}
+
+.delete-task {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.delete-task:hover {
+    background-color: #c82333;
+}
+
+.add-participant {
+    background-color: #1f9e25;
+    color: #fff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.add-participant:hover {
+    background-color: #195f1d;
+}

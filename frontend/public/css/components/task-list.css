@@ -40,6 +40,20 @@
     background-color: #c82333;
 }
 
+.remove-participant {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 3px 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.remove-participant:hover {
+    background-color: #c82333;
+}
+
 .task-list ul {
     list-style: none;
     padding: 0;

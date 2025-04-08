@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Task Manager</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/components/register-form.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Task Manager</h1>
+        <div class="register-form">
+            <h2>Register</h2>
+            <% if (error) { %>
+                <p class="error"><%= error %></p>
+            <% } %>
+            <form id="registerForm" method="post" action="/register" onsubmit="return validatePass()">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+
+                <label for="password_1">Password:</label>
+                <input type="password" id="password_1" name="password_1" required placeholder="Enter your password">
+
+                <label for="password_2">Repeat password:</label>
+                <input type="password" id="password_2" name="password_2" required placeholder="Repeat your password">
+
+                <button type="submit">Register</button>
+            </form>
+            <p id="registerMessage" class="message"></p>
+            <p class="link">Already have an account? <a href="/login">Login here</a></p>
+        </div>
+    </div>
+
+    <script>
+        function validatePass() {
+            var pass1 = document.forms["registerForm"]["password_1"].value;
+            var pass2 = document.forms["registerForm"]["password_2"].value;
+
+            if (pass1 != pass2) {
+                alert("Пароли не совпадают");
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,7 +1,9 @@
-FROM python:3.10
+FROM node:18-alpine
 
 WORKDIR /app
 
-COPY frontend/ .
+COPY . .
 
-CMD ["python", "-m", "http.server", "8085"]
+RUN npm install --omit=dev
+
+CMD ["node", "app.js"]

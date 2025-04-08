@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Task Manager</title>
-    <link rel="stylesheet" href="../css/reset.css">
-    <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/components/login-form.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/components/login-form.css">
 </head>
 <body>
     <div class="container">
         <h1>Task Manager</h1>
         <div class="login-form">
             <h2>Login</h2>
-            <form id="loginForm">
+            <% if (error) { %>
+                <p class="error"><%= error %></p>
+            <% } %>
+            <form id="loginForm" method="post" action="/login">
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
 
@@ -23,10 +26,8 @@
                 <button type="submit">Login</button>
             </form>
             <p id="loginMessage" class="message"></p>
-            <p class="link">Don't have an account? <a href="register.html">Register here</a></p>
+            <p class="link">Don't have an account? <a href="/register">Register here</a></p>
         </div>
     </div>
-
-    <script type="module" src="../js/main.js"></script>
 </body>
 </html>
