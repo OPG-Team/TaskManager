@@ -1,0 +1,11 @@
+groups:
+  - name: docker_alerts
+    rules:
+      - alert: AppIsDead
+        expr: time() - container_last_seen{name="App"} > 15
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "бэк отстегнул"
+          description: "я устал, включи его сам :/"

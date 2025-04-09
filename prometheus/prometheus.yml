@@ -1,14 +1,19 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 # Добавляем секцию alerting для Alertmanager
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
 
 # Добавляем файл с правилами алертов
-#rule_files:
-#  - '/etc/prometheus/alerts.yml'
-#  - '/etc/prometheus/postgres_alerts.yml'
-#  - '/etc/prometheus/docker_alerts.yml'
+rule_files:
+  - '/etc/prometheus/Redis.yml'
+  - '/etc/prometheus/postgres.yml'
+  - '/etc/prometheus/App.yml'
+  - '/etc/prometheus/Frontend.yml'
 
 scrape_configs:
   - job_name: 'prometheus'
@@ -29,6 +34,6 @@ scrape_configs:
 
   - job_name: 'Docker_Metrics'
     static_configs:
-      - targets: ['cadvisor:7085']
+      - targets: ['cadvisor:8080']
 
       

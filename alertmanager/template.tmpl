@@ -1,0 +1,9 @@
+{{ define "telegram.message" }}
+🔥 *{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}*
+{{ range .Alerts }}
+- Сервер: {{ .Labels.instance }}
+- Что случилось?: {{ .Annotations.summary }}
+- Описание: {{ .Annotations.description }}
+- Время: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+{{ end }}
+{{ end }}

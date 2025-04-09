@@ -1,4 +1,16 @@
 services:
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager/template.tmpl:/etc/alertmanager/template.tmpl
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+    networks:
+      - app_network
+ 
   postgres:
     image: postgres:14.17-alpine3.21
     container_name: PostgresDB
@@ -92,6 +104,19 @@ services:
     networks:
       - app_network
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - app_network
+
   backend:
     build:
       context: .
@@ -110,8 +135,6 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
       - FRONTEND_URL=${FRONTEND_URL}
-    volumes:
-      - ./backend:/app
     restart: unless-stopped
     networks:
       - app_network
@@ -123,8 +146,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: Frontend
-    depends_on:
-      - backend
     environment:
       - BACKEND_URL=${BACKEND_URL}
       - SESSION_SECRET=${SESSION_SECRET}
@@ -139,9 +160,10 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      #- ./prometheus/alerts.yml:/etc/prometheus/alerts.yml  # Добавляем файл с алертами
-      #- ./prometheus/postgres_alerts.yml:/etc/prometheus/postgres_alerts.yml
-      #- ./prometheus/docker_alerts.yml:/etc/prometheus/docker_alerts.yml
+      - ./prometheus/Redis.yml:/etc/prometheus/Redis.yml 
+      - ./prometheus/postgres.yml:/etc/prometheus/postgres.yml
+      - ./prometheus/App.yml:/etc/prometheus/App.yml
+      - ./prometheus/Frontend.yml:/etc/prometheus/Frontend.yml
       - prometheus_data:/prometheus
     ports:
       - "7090:9090"
@@ -157,10 +179,9 @@ services:
       - ./grafana/dashboards:/etc/grafana/dashboards
       - ./grafana/provisioning:/etc/grafana/provisioning
     ports:
-      - "3000:3000"
+      - "2222:3000"
     depends_on:
       - prometheus
-    
     restart: unless-stopped
     networks:
       - app_network

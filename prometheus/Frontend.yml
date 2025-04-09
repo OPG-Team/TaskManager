@@ -1,0 +1,11 @@
+groups:
+  - name: docker_alerts
+    rules:
+      - alert: FrontendIsDead
+        expr: time() - container_last_seen{name="Frontend"} > 15
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Фронтенд отстегнул, пофиг"
+          description: "не включай его, я рад :)"

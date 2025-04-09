@@ -1,9 +1,18 @@
-FROM python:3.13
+FROM python:3.13-slim
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libffi-dev \
+    libpq-dev \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY backend/ .
 
 RUN pip install --no-cache-dir -r requirements.txt 
 
-CMD sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8005"
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8005"]

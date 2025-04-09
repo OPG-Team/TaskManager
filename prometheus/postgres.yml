@@ -1,0 +1,11 @@
+groups:
+  - name: postgres_alerts
+    rules:
+      - alert: PostgresIsDead
+        expr: time() - container_last_seen{name="PostgresDB"} > 15
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Бд отстегнула"
+          description: "я устал, включи её сам :/"

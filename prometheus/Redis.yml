@@ -1,0 +1,11 @@
+groups:
+  - name: docker_alerts
+    rules:
+      - alert: RedisIsDead
+        expr: time() - container_last_seen{name="Redis"} > 15
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Редис умер"
+          description: "я устал, включи его сам :/"
