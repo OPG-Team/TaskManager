@@ -26,7 +26,7 @@ cd <your path>/TaskManager
 
 ### Опционально:
 
-* **На Windows не будет работать cAvisor, а так же уведомления в Telegram на основе его метрик по контейнерам** 
+- **На Windows не будет работать cAdvisor, а так же уведомления в Telegram на основе его метрик по контейнерам** 
 
 Дальше нужно установить настройки для **alertmanager**, переходим в директорию:
 ```
@@ -37,7 +37,6 @@ cd alertmanager
 
 ![изображение](https://github.com/user-attachments/assets/ace19f66-1ca4-4246-b29a-dca207243bb5)
 
-
 Далее возвращаемся в корень проекта и запускаем сборку проекта с помощью **docker-compose**:
 ```
 cd ..
@@ -46,8 +45,8 @@ docker-compose up
 
 После чего, вам будут доступны интефрейсы:
 
-- Frontend'a - http://127.0.0.1:8085
-- FastAPI (swager) - http://127.0.0.1:8005/docs
+- Frontend - http://127.0.0.1:8085
+- FastAPI (SwaggerUI) - http://127.0.0.1:8005/docs
 - Grafana - http://127.0.0.1:2222
 - Prometheus - http://127.0.0.1:7090
 - cAdvisor - http://127.0.0.1:8080
@@ -59,9 +58,10 @@ docker-compose up
 - cAdvisor - http://127.0.0.1:8080/metrics
 - FastAPI - http://127.0.0.1:8005/metrics
 
+
 ## Использование
 ### Frontend
-  
+
 ![изображение](https://github.com/user-attachments/assets/917c83f3-3065-45a6-8762-237b84449b5d)
 
 После авторизации в приложении:
@@ -79,17 +79,15 @@ docker-compose up
 - Фильтровать задания по дате создания и статусу;
 - Выход из аккаунта.
 
+
 ### Grafana
-
-логин: admin
-
-пароль: admin
-
+Данные для авторизации:
+- Логин: `admin`
+- Пароль: `admin`
 
 Слева на панеле нажимте Dashboards
 
 ![image](https://github.com/user-attachments/assets/ea7d8aea-a055-47fa-998a-c110ad5321d7)
-
 
 Откроется список доступных дашбордов:
 
@@ -98,7 +96,6 @@ docker-compose up
 Пример дашборда для cAdvisor (на Windows не будет работать cAdvisor, все поля будут N/A)
 
 ![image](https://github.com/user-attachments/assets/37eb4c84-d62c-4fb4-ae1d-01dd82735409)
-
 
 
 ## Описание работы
