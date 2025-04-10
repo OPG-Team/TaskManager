@@ -1,3 +1,4 @@
 .env
 **__pycache__/
 redis/data/appendonly.aof
+redis/data/dump.rdb
