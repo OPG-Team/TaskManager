@@ -7,6 +7,13 @@
 - **Redis** - для временного хранения заблокированных refresh_token's;
 - **HTML/CSS** - верстка сайта;
 - **NodeJS** - логика frontend, взаимодействие с API;
+- **Prometheus/Grafana** - мониторинг ресурсов;
+- **Alertmanager** - увеомления в Telegram на основе метрик Prometheus;
+- **Экспортеры**:
+    - Postgres-exporter - сбор метрик из PostgreSQL;
+    - Redis-exporter - сбор метрик из Redis;
+    - cAdvisor - сбор метрик из Docker;
+    - prometheus_fastapi_instrumentator - сбор метрик из FastAPI;
 - **Docker** - для контейнеризации сервисов;
 - **Git** - для управлений версиями;
 - **GitHub** - для облачного хранения проекта.
@@ -138,5 +145,5 @@ docker-compose up
 
 
 ### База данных
-ER-диаграмма базы данных:
+ER-диаграмма базы данных PostgreSQL:
 ![изображение](https://github.com/user-attachments/assets/0917d92f-ac6e-4904-a0d8-89f41eb35af2)
