@@ -299,4 +299,5 @@ alertmanager
 
 ### База данных
 ER-диаграмма базы данных PostgreSQL:
+
 <img width="640" src="https://github.com/user-attachments/assets/0917d92f-ac6e-4904-a0d8-89f41eb35af2" />
