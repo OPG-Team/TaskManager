@@ -1,6 +1,19 @@
 # TaskManager
 Была проделана работа над созданием TaskManager, создан backend и frontend в разных модулях, работают физически независимо друг от друга.
 
+Над проектом работают два разработчика:
+- [kreipikc](https://github.com/kreipikc)
+    - API (FastAPI)
+    - Frontend (HTML/CSS, NodeJS)
+    - Git
+    - GitHub
+    - Документация
+- [Revenan7](https://github.com/Revenan7)
+    - Проработка базы данных (PostgreSQL, Redis)
+    - Мониторинг (Prometheus/Grafana/Экспортеры)
+    - Alertmanager
+    - Docker
+
 ## Что было использовано для создания
 - **FastAPI (Python)** - для создания API;
 - **PostgreSQL** - база данных для хранения данных о пользователях и заданий;
