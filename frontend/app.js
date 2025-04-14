@@ -17,7 +17,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser()); // Добавляем middleware для работы с куками
+app.use(cookieParser());
 app.use(
     session({
         secret: process.env.SESSION_SECRET || "your-secret-key",
@@ -52,21 +52,25 @@ app.use(async (req, res, next) => {
 // Роуты
 app.get("/", async (req, res) => {
     if (req.session.access_token) {
-        const response = await axios.get(`${BACKEND_URL}/tasks`, {}, {
-            headers: {
-                Authorization: `Bearer ${req.session.access_token}`,
-                "Content-Type": "application/json",
-            },
-        });
-
-        const response2 = await axios.get(`${BACKEND_URL}/me`, {}, {
-            headers: {
-                Authorization: `Bearer ${req.session.access_token}`,
-                "Content-Type": "application/json",
-            },
-        });
-
-        res.render("index", { emailCurrentUser: response2.data.email, tasks: response.data });
+        try {
+            const response = await axios.get(`${BACKEND_URL}/tasks`, {}, {
+                headers: {
+                    Authorization: `Bearer ${req.session.access_token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            const response2 = await axios.get(`${BACKEND_URL}/me`, {}, {
+                headers: {
+                    Authorization: `Bearer ${req.session.access_token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            res.render("index", { emailCurrentUser: response2.data.email, tasks: response.data });
+        } catch (error) {
+            console.log("Ошибка сервера:", error.response?.data)
+        }
     } else {
         res.redirect("/login");
     }
@@ -129,7 +133,13 @@ app.post("/register", async (req, res) => {
             }
         });
         
-        return res.redirect("/login");
+        return req.session.save((err) => {
+            if (err) {
+                console.error("Session save error:", err);
+                return res.render("register", { error: "Ошибка сервера" });
+            }
+            return res.redirect("/login");
+        });
     } catch (error) {
         console.error("Registration error:", error.response?.data);
         return res.render("register", { 
@@ -313,5 +323,5 @@ axios.interceptors.response.use(
 // Запуск сервера
 const PORT = 8085;
 app.listen(PORT, () => {
-    console.log(`Сервер запущен на http://localhost:${PORT}`);
+    console.log(`Сервер запущен на порту: ${PORT}`);
 });

@@ -64,7 +64,11 @@
                                 <h3 class="task-title"><%= task.title %></h3>
                                 <p class="task-status">Status: <span><%= task.status %></span></p>
                                 <p class="task-description">Description: <span><%= task.description %></span></p>
-                                <p>Created: <%= new Date(task.time) %></p>
+                                <p>Created: <%= new Date(task.time).toLocaleDateString(undefined, {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                }) %></p>
                             </div>
                         
                             <div class="task-edit" style="display: none;">
