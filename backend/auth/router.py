@@ -8,7 +8,7 @@ from .responses.responses import UsersResponse, base_auth_responses
 from .service import UserRepository
 
 
-router = APIRouter(tags=["Users 👔"])
+router = APIRouter(prefix="/auth", tags=["Users 👔"])
 
 
 @router.post(

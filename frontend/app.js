@@ -60,7 +60,7 @@ app.get("/", async (req, res) => {
                 },
             });
     
-            const response2 = await axios.get(`${BACKEND_URL}/me`, {}, {
+            const response2 = await axios.get(`${BACKEND_URL}/auth/me`, {}, {
                 headers: {
                     Authorization: `Bearer ${req.session.access_token}`,
                     "Content-Type": "application/json",
@@ -90,7 +90,7 @@ app.get("/register", (req, res) => {
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
     try {
-        const response = await axios.post(`${BACKEND_URL}/login`, { 
+        const response = await axios.post(`${BACKEND_URL}/auth/login`, { 
             email, 
             password 
         }, {
@@ -123,7 +123,7 @@ app.post("/register", async (req, res) => {
     const password = password_1;
 
     try {
-        const response = await axios.post(`${BACKEND_URL}/register`, { 
+        const response = await axios.post(`${BACKEND_URL}/auth/register`, { 
             email, 
             password
         }, {
@@ -151,7 +151,7 @@ app.post("/register", async (req, res) => {
 
 app.post("/logout", async (req, res) => {
     try {
-        await axios.post(`${BACKEND_URL}/logout`, {}, {
+        await axios.post(`${BACKEND_URL}/auth/logout`, {}, {
             withCredentials: true
         });
     } catch (error) {
@@ -283,7 +283,7 @@ app.post("/add-participant/:taskId", async (req, res) => {
 // Обработчик для обновления Access Token
 const refreshAccessToken = async (req) => {
     try {
-        const response = await axios.post(`${BACKEND_URL}/refresh_token`, {}, {
+        const response = await axios.post(`${BACKEND_URL}/auth/refresh_token`, {}, {
             withCredentials: true // Отправляем HTTP-Only куки с Refresh Token
         });
         
