@@ -5,6 +5,7 @@ from .responses.http_errors import HTTPError
 from .responses.responses import PasswdResponse
 from .service import PasswdRepository
 from .utils import create_recovery_code
+from utils import handle_catch_error
 
 
 router = APIRouter(prefix="/auth", tags=["Users 👔"])
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/auth", tags=["Users 👔"])
     response_model=None,
     responses=PasswdResponse.forgot_password_post,
 )
+@handle_catch_error
 async def forgot_password(request: Request, forgot: ForgotPassword):
     user = await UserRepository.find_one_or_none_by_email(str(forgot.email))
     if user is None:
@@ -41,6 +43,7 @@ async def forgot_password(request: Request, forgot: ForgotPassword):
     response_model=None,
     responses=PasswdResponse.reset_password_post,
 )
+@handle_catch_error
 async def reset_password(request: Request, reset: ResetPassword):
     recovery_code = await request.app.redis.get_password_reset_code(reset.email)
     if not recovery_code:
