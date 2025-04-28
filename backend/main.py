@@ -24,9 +24,12 @@ async def lifespan(app: FastAPI):
         await app.redis.ping()
         app_logger.info("Redis connection established successfully")
 
-        app.smtp = SmtpTools(SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD)
-        await app.smtp.ping()
-        app_logger.info("SMTP connection established successfully")
+        if SMTP_HOST == "smtp.example.com" or SMTP_EMAIL == "your_email@example.com":
+            app_logger.info("SMTP arguments are set by default - skip")
+        else:
+            app.smtp = SmtpTools(SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD)
+            await app.smtp.ping()
+            app_logger.info("SMTP connection established successfully")
 
         yield
     except (redis.ConnectionError, redis.TimeoutError) as e:
