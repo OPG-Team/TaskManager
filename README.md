@@ -182,6 +182,14 @@ backend
 │   └── versions
 ├── redis_tool.py    # Класс для работы с Redis
 ├── requirements.txt # Необходимые библиотеки
+├── res_passwd       # Модуль для сброса пароля
+│   ├── models.py
+│   ├── responses
+│   │   ├── http_errors.py
+│   │   └── responses.py
+│   ├── router.py
+│   ├── service.py
+│   └── utils.py
 ├── tasks            # Модуль для работы с задачами
 │   ├── database.py
 │   ├── models.py
