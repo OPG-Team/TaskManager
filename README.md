@@ -190,6 +190,7 @@ backend
 │   ├── router.py
 │   ├── service.py
 │   └── utils.py
+├── smtp.py          # Класс для работы с SMTP
 ├── tasks            # Модуль для работы с задачами
 │   ├── database.py
 │   ├── models.py
