@@ -102,10 +102,11 @@ docker-compose up
 
 ### Swggaer UI
 На главной странице отображаются два сервиса:
-- Users - ендпоинты для работы с аккаунтом;
-- Tasks - ендпоинты для работы с задачами.
+- Users (`/auth/`) - ендпоинты для работы с аккаунтом;
+- Tasks (`/tasks/`) - ендпоинты для работы с задачами.
 
-<img width="640" alt="Screenshot 2025-04-11 at 14 37 00" src="https://github.com/user-attachments/assets/e863d6a0-fe58-4915-a991-96ecdf8aef98" />
+<img width="640" alt="Screenshot 2025-04-11 at 14 37 00" src="https://github.com/user-attachments/assets/38e54527-6978-4a7e-9883-d7a07a8499af" />
+
 
 Для авторизации в Swagger:
 1. Регистрируем аккаунт;
