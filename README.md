@@ -204,19 +204,19 @@ backend
 ```
 
 #### Описание API
-Для модуля `Auth`:
-- **POST** `/register` - регистрация нового аккаунта, принимает **json**:
+Для модуля `Users`:
+- **POST** `/auth/register` - регистрация нового аккаунта, принимает **json**:
     - email: string;
     - password: string.
-- **POST** `/login` - авторизация и аутентификация пользователя, возврат JWT, принимает **json**:
+- **POST** `/auth/login` - авторизация и аутентификация пользователя, возврат JWT, принимает **json**:
     - email: string;
     - password: string.
-- **POST** `/refresh_token` - обновления *access_token* с помощью *refresh_token*;
-- **POST** `/logout` - выход из аккаунта, записывание *refresh_token* в *black list*;
-- **GET** `/me` - данные о пользователя по JWT.
-- **POST** `/forgot_password` - запрос на сброса проля по email, принимает **json**:
+- **POST** `/auth/refresh_token` - обновления *access_token* с помощью *refresh_token*;
+- **POST** `/auth/logout` - выход из аккаунта, записывание *refresh_token* в *black list*;
+- **GET** `/auth/me` - данные о пользователя по JWT.
+- **POST** `/auth/forgot_password` - запрос на сброса проля по email, принимает **json**:
     - email: string.
-- **POST** `/reset_password` - проверка кода и сброс пароля, принимает **json**:
+- **POST** `/auth/reset_password` - проверка кода и сброс пароля, принимает **json**:
     - email: string;
     - password: string;
     - code: string.
