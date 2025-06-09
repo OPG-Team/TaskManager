@@ -26,7 +26,7 @@ class SmtpTools:
         message = (f'Task_Manager_Project Password Reset\n\n'
                    f'Hello,\n'
                    f'We have received a request '
-                   f'to reset the password for your Web_Example_Project account: {to_email}.\n\n'
+                   f'to reset the password for your Task_Manager_Project account: {to_email}.\n\n'
                    f'Your reset password code:{code}')
 
         loop = asyncio.get_event_loop()
